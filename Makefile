@@ -2,6 +2,9 @@ OBJECTS = a.o
 CORES = 1
 
 
+qemu : kernel
+	qemu-system-riscv64 -machine virt -cpu rv64 -smp $(CORES) -nographic -bios none -kernel kernel 
+
 gdb : kernel
 	qemu-system-riscv64 -machine virt -cpu rv64 -smp $(CORES) -s -S -nographic -bios none -kernel kernel
 
