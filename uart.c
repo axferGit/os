@@ -1,4 +1,4 @@
-#define UART0 0x1000000UL
+#define UART0 0x10000000UL
 
 #define RHR 0b0
 #define THR 0b0
