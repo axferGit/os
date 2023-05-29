@@ -30,6 +30,30 @@ A statement follows the structure ```[label:] [instrcution]```
 ### Sources
 * RISC-V assembler language : https://michaeljclark.github.io/asm.html
 
+# RISC-5
+
+```assembly
+call f :
+        ra <- pc + 4
+        j f
+```
+
+The callee saves ```ra``` and ```s0/fp``` and sets its ```fp```
+```assembly
+addi sp, sp, -16        #make place for storing ra and fp
+sd ra, 8(sp)            #store previous ra
+sd s0, 0(sp)            #store previous fp
+addi s0, sp, 16         #set the new fp (equal to previous sp)
+```
+
+For return, the callee resets ```ra``` , ```fp``` and ```sp``` and jumps to ```ra```
+```assembly
+addi sp, fp, 0          #reset sp to the previous sp
+sd ra, -8(sp)           #reset previous ra
+sd fp, -16(sp)          #reset previous fp
+jr ra                   #jump to next instruction of the previous function
+```
+
 # Start
 
 
@@ -84,3 +108,12 @@ Initially:
 * ISR : ```0x01``` : No interrupt is pending
 * MCR : ```0x08``` : Gobal interrupts enabled
 * LSR : ```0x60``` : Transmitter empty and THR empty
+
+# TASKS
+* Allocate a stack for the CPU
+  * Where ?
+  * entry code to set up the sp
+* Interruption handling for the uart
+  * Enable interrupts
+  * set trap vector
+  * Dev code for trap handling
