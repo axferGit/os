@@ -1,6 +1,6 @@
+#include "riscv.h"
 #include "uart.c"
-
-typedef unsigned long uint64;
+#include "plic.c"
 
 __attribute__ ((aligned (16))) char stack0[4096];
 
@@ -23,35 +23,20 @@ void mtrapvec(){
     return;
 }
 
-void w_mtvec(uint64 f){
-    asm volatile("csrw mtvec, %0" : : "r" (f));
-}
-
-uint64 r_mstatus(){
-    uint64 x;
-    asm volatile("csrr %0, mstatus" : "+r" (x):); /// a voir si bonnes operandes
-    return x;
-}
-
-void w_mstatus(uint64 x){
-    asm volatile("csrw mstatus, %0": : "r" (x));
-    return;
-}
-
-void s_mstatus(uint64 x){
-    asm volatile("csrs mstatus, %0": : "r"(x));
-    return;
-}
-
 void start(){
     
     // initialize uart
     uartinit();
+    //plic init
+    plicinit();
+    plicinithart();
     // set trap vector
     w_mtvec((uint64)&mtrapvec);
-    // enable interrupts
+    // enable machine external interrupts
+    w_mie(r_mie() | 1UL << 11); //0x7FF to enable every thing
+    // enable machine interrupts
     w_mstatus(r_mstatus() | 0b1L << 3);
-
-    
+    loop();
+    return;    
 }
 

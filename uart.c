@@ -1,13 +1,4 @@
-#define UART0 0x10000000UL
-
-#define RHR 0b0
-#define THR 0b0
-#define IER 0b1
-#define ISR 0b10
-#define FCR 0b10
-#define LCR 0b11
-#define LSR 0b101
-
+#include "memlayout.h"
 #define addrReg(Reg) ((volatile unsigned char *) (UART0 + Reg))
 #define readReg(Reg) (*(addrReg(Reg)))
 #define writeReg(Reg,v) (*(addrReg(Reg)) = (v))
