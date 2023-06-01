@@ -29,7 +29,7 @@ void uartinit(){
 // write 1 character tu UART.
 // block until the character is written
 void uartputc(char c){
-    while(!(readReg(LSR) & 0b100000)){
+    while(!(readReg(LSR) & 1 << 5)){
         ; // wait for THR empty
     }
     writeReg(THR,c);
@@ -48,7 +48,7 @@ int uartgetc(void){
 }
 
 void _printf(char* string){
-    for(int i; string[i] != 0x00; i=i+1){
+    for(int i = 0; string[i] != 0x00; i=i+1){
         uartputc(string[i]);
     }
     return;
