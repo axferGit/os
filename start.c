@@ -24,9 +24,8 @@ void mtrapvec(){
 }
 
 void start(){
-    
     // initialize uart
-    uartinit();
+    uartinit();;
     //plic init
     plicinit();
     plicinithart();
@@ -36,7 +35,9 @@ void start(){
     w_mie(r_mie() | 1UL << 11); //0x7FF to enable every thing
     // enable machine interrupts
     w_mstatus(r_mstatus() | 0b1L << 3);
-    loop();
-    return;    
+    loop();    
 }
 
+int main(){
+    
+}
