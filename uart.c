@@ -38,7 +38,7 @@ void uartputc(char c){
 }
 
 // read 1 character from UART
-// return -1 if none is waiting (error)
+// return the charecter or return -1 if no character is availible (error)
 int uartgetc(){
     if (readReg(LSR) & 0x01){
         return readReg(RHR);

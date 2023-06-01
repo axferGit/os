@@ -15,13 +15,15 @@ void loop(){
 }
 
 void mtrapvec(){
-    _printf("trap !");
+    _printf("trap !\n");
     int c = uartgetc();
     if (c != -1){
         uartputc(c);
     }
-    *((unsigned char *) 0x10000000UL) = 0x62;
-    return;
+    else{
+        *((unsigned char *) 0x10000000UL) = '.';
+    }
+        return;
 }
 
 void start(){
@@ -40,6 +42,5 @@ void start(){
     w_mie(r_mie() | 1UL << 11); //0x7FF to enable every thing
     // enable machine interrupts
     w_mstatus(r_mstatus() | 1UL << 3);
-    loop();
     return;    
 }
