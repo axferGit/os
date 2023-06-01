@@ -1,4 +1,4 @@
-OBJS = entry.o start.o
+OBJS = entry.o start.o plic.o uart.o riscv.o
 QEMU = qemu-system-riscv64
 CORES = 1
 TOOLPREFIX = riscv64-linux-gnu-
@@ -42,6 +42,15 @@ entry.o : entry.S
 
 start.o : start.c
 	riscv64-linux-gnu-gcc -c start.c -g -o start.o
+
+plic.o : plic.c
+	riscv64-linux-gnu-gcc -c $< -g -o $@
+
+uart.o : uart.c
+	riscv64-linux-gnu-gcc -c $< -g -o $@
+
+riscv.o : riscv.c
+	riscv64-linux-gnu-gcc -c $< -g -o $@
 
 clean :
 	rm *.o

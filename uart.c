@@ -1,7 +1,8 @@
 #include "memlayout.h"
+#include "uart.h"
 #define addrReg(Reg) ((volatile unsigned char *) (UART0 + Reg))
 #define readReg(Reg) (*(addrReg(Reg)))
-#define writeReg(Reg,v) (*(addrReg(Reg)) = (v))
+#define writeReg(Reg,v) *(addrReg(Reg)) = (v)
 
 void uartinit(){
     // Disable interrupts
@@ -38,7 +39,7 @@ void uartputc(char c){
 
 // read 1 character from UART
 // return -1 if none is waiting (error)
-int uartgetc(void){
+int uartgetc(){
     if (readReg(LSR) & 0x01){
         return readReg(RHR);
     }
