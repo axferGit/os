@@ -5,7 +5,7 @@ void w_mtvec(uint64 f){
 }
 
 uint64 r_mstatus(){
-    uint64 x;
+    uint64 x = 0;
     asm volatile("csrr %0, mstatus" : "+r" (x):); /// a voir si bonnes operandes
     return x;
 }
@@ -21,7 +21,7 @@ void s_mstatus(uint64 x){
 }
 
 uint64 r_mie(){
-    uint64 x;
+    uint64 x = 0;
     asm volatile("csrr %0, mie" : "+r" (x));
     return x;
 }
@@ -32,7 +32,7 @@ void w_mie(uint64 x){
 }
 
 uint64 cpuid(){
-    uint64 x;
+    uint64 x = 0;
     asm volatile("csrr %0, mhartid" : "+r" (x));
     return x;
 }

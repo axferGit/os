@@ -1,4 +1,4 @@
-#include "riscv.c"
+#include "riscv.h"
 #include "memlayout.h"
 #include "plic.h"
 

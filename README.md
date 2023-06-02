@@ -30,7 +30,7 @@ A statement follows the structure ```[label:] [instrcution]```
 ### Sources
 * RISC-V assembler language : https://michaeljclark.github.io/asm.html
 
-# RISC-5
+# RISC-V
 
 ```assembly
 call f :
@@ -78,8 +78,8 @@ $a2 = 0x1032 # end of the ROM code ?
 
 ## Entry
 
-After the code of the ROM, ```pc``` points to ```0x80000000```. This address corresponds to the entry point of the kernel.
-The entry point is located in ```entry.S``` and corresponds to label ```_entry```.
+This piece of code must be loaded at ```0x80000000``` (start of the kernel for QEMU).The correct location is ensured by the loading script ```t.ld```, which sets the address and call ```_entry```.
+
 ```assembly
 _entry:
 	# set up a stack for C.
@@ -95,8 +95,8 @@ _entry:
 	# jump to start() in start.c
         call start
 ```
-
-The outcome of this code is independant of its location : the location is discovered at ```0x1000``` and the offsets to get the values stored in ```a1``` and ```a2``` are calculated given this position.
+This piece of code aims at provinding each core with a stack. The stack is defined in code files and located in ```.bss``` section.
+At the end, the fucntion ```start``` is called.
 
 ## Serial I/O
 Uart 16550A is virtualized by Qemu. It is in charge of converting data from the CPU (parallel) to the serial port (serial) and each other.
