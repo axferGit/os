@@ -19,4 +19,11 @@
 #define NO_SOURCE 0
 
 //RISC-V
-#define MACHINE_EXTERNAL_INTERRUPT 11
+#define MACHINE_EXTERNAL_INTERRUPT 11UL
+#define MACHINE_TIMER_INTERRUPT 7UL
+
+//CLINT
+#define CLINT 0x02000000UL
+#define a_mtime (CLINT + 0xbff8)
+#define a_mtimecmp(hart) (CLINT + 0x4000 + (hart) * 8)
+#define TIME (*(uint64*) a_mtime)

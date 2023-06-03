@@ -38,6 +38,11 @@ call f :
         j f
 ```
 
+```assembly
+ret <-> jal ra
+```
+
+
 The callee saves ```ra``` and ```s0/fp``` and sets its ```fp```
 ```assembly
 addi sp, sp, -16        #make place for storing ra and fp
@@ -110,9 +115,12 @@ Configuration
 
 Rules
 * a target will be warned only if the source is connected to the core and the source's priority is greater then the target's threshold
-* when a source raises an interruption, a pending bit is set in the PLIC
-* if a target is triggered, it should claim the PLIC to know which source raised the interruption. Only one target will be given the id of the source, th orther targets will be given zero (does not match any source).
+* when a source raises an interruption, a pending bit is set in the PLIC and MEIP too.
+* if a target is triggered, it should claim the PLIC to know which source raised the interruption. Only one target will be given the id of the source, the orther targets will be given zero (does not match any source). The claim clear the pending bit in PLIC and possibly in MEIP if there is no other pending interrupt for that target.
 * once a target has finished dealing with an interrupt, it must warn the PLIC, so that it becomes available for dealing with other interrupts.
+
+Qemu
+* there are 16 targets (8 cores and 2 modes (M, S))
 
 ## Serial I/O
 Uart 16550A is virtualized by Qemu. It is in charge of converting data from the CPU (parallel) to the serial port (serial) and each other.
@@ -126,10 +134,7 @@ Initially:
 * LSR : ```0x60``` : Transmitter empty and THR empty
 
 # TASKS
-* Allocate a stack for the CPU
-  * Where ?
-  * entry code to set up the sp
-* Interruption handling for the uart
-  * Enable interrupts
-  * set trap vector
-  * Dev code for trap handling
+* Explain trap handling
+* Set timerinterrupt
+* Delagate to supervisor mode
+

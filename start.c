@@ -37,22 +37,21 @@ void mtrapvec(){
                     uartputc(c);
                 }
                 else{
-                    *((unsigned char *) 0x10000000UL) = '.';
+                    *((unsigned char *) 0x1000UL) = '.';
                 }
             }
 
             // Complete the interrupt
             pliccomplete(id);
-
-            // Return from trap handling mode
-            asm volatile("mret");
         }
 
-
+        if (cause == MACHINE_TIMER_INTERRUPT){
+            _printf("timer\n");
+            int cpu_id = cpuid();
+            *((uint64*) a_mtimecmp(cpu_id)) = TIME + 10000000UL;
+        }
     }
-
-    
-    
+    asm volatile("mret"); 
 }
 
 void start(){
@@ -69,6 +68,13 @@ void start(){
     w_mtvec((uint64)&mtrapvec);
     // enable machine external interrupts
     w_mie(r_mie() | 1UL << 11); //0x7FF to enable every thing
+
+    // enable Machine timer interrupts
+    w_mie(r_mie() | 1UL << 7); //0x7FF to enable every thing
+    int cpu_id = cpuid();
+    *((uint64*) a_mtimecmp(cpu_id)) = 10000000UL;
+    
+
     // enable machine interrupts
     w_mstatus(r_mstatus() | 1UL << 3);
     return;    
