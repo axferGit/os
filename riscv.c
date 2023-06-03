@@ -36,3 +36,9 @@ uint64 cpuid(){
     asm volatile("csrr %0, mhartid" : "+r" (x));
     return x;
 }
+
+uint64 r_mcause(){
+    uint64 x = 0;
+    asm volatile("csrr %0, mcause" : "+r" (x));
+    return x;
+}

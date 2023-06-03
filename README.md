@@ -98,6 +98,22 @@ _entry:
 This piece of code aims at provinding each core with a stack. The stack is defined in code files and located in ```.bss``` section.
 At the end, the fucntion ```start``` is called.
 
+## PLIC (Platform level interrupt controller)
+
+The PLIC make the link between external components and the microprocessor. It is the source of ```external interrupts```.
+External devices are connected to the PLIC through the ```irq``` wire. This wire is pulled up/down (in case of level trigger) to signal an interrupt has occured on the device, then the PLIC will warn the core.
+
+Configuration
+* for each source (device), set the priority. 
+* for each target (core x mode) connect sources which can possiblly trigger this core
+* for each target (core x mode) set the priority threshold
+
+Rules
+* a target will be warned only if the source is connected to the core and the source's priority is greater then the target's threshold
+* when a source raises an interruption, a pending bit is set in the PLIC
+* if a target is triggered, it should claim the PLIC to know which source raised the interruption. Only one target will be given the id of the source, th orther targets will be given zero (does not match any source).
+* once a target has finished dealing with an interrupt, it must warn the PLIC, so that it becomes available for dealing with other interrupts.
+
 ## Serial I/O
 Uart 16550A is virtualized by Qemu. It is in charge of converting data from the CPU (parallel) to the serial port (serial) and each other.
 It is located at address ```0x10000000```

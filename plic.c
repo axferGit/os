@@ -20,3 +20,14 @@ void plicinithart(){
     *((uint32*) a_PLIC_MACHINE_THRESHOLD(x)) = 0;
     return;
 }
+
+uint32 plicclaim(){
+    uint64 x = cpuid();
+    return *((uint32 *) a_PLIC_MACHINE_CLAIM(x));
+}
+
+void pliccomplete(uint32 id){
+    uint64 x = cpuid();
+    *((uint32 *) a_PLIC_MACHINE_COMPLETE(x)) = id;
+    return;
+}

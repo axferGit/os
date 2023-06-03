@@ -7,3 +7,4 @@ void s_mstatus(uint64);
 uint64 r_mie();
 void w_mie(uint64);
 uint64 cpuid();
+uint64 r_mcause();

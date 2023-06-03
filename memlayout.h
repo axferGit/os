@@ -13,4 +13,10 @@
 #define a_PLIC_PRIORITY(source) (PLIC + (source) * 4)
 #define a_PLIC_MACHINE_INTERRUPT(hart) (PLIC + 0x2000 + (hart) * 0x100)
 #define a_PLIC_MACHINE_THRESHOLD(hart) (PLIC + 0x200000 + (hart) * 0x2000)
+#define a_PLIC_MACHINE_CLAIM(hart) (PLIC + 0x200004 + (hart) * 0x2000)
+#define a_PLIC_MACHINE_COMPLETE(hart) (a_PLIC_MACHINE_CLAIM(hart))
 #define UART0_IRQ 10
+#define NO_SOURCE 0
+
+//RISC-V
+#define MACHINE_EXTERNAL_INTERRUPT 11
