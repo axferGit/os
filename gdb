@@ -3,4 +3,4 @@ layout split
 layout regs
 focus cmd
 #mtvec
-b* 0x800001e4
+b* 0x80000024

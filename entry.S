@@ -2,7 +2,8 @@
 .global stack0
 .global start
 .global _entry
-.global loop
+.global junk
+
 _entry:
     la sp, stack0
     li a0, 1024*4

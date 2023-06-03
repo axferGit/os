@@ -31,6 +31,11 @@ void w_mie(uint64 x){
     return;
 }
 
+void s_mie(uint64 x){
+    asm volatile("csrs mie, %0" : : "r"(x));
+    return;
+}
+
 uint64 cpuid(){
     uint64 x = 0;
     asm volatile("csrr %0, mhartid" : "+r" (x));
@@ -43,3 +48,22 @@ uint64 r_mcause(){
     return x;
 }
 
+void s_mideleg(uint64 x){
+    asm volatile("csrs mideleg, %0" : : "r"(x));
+    return;
+}
+
+void w_mepc(uint64 x){
+    asm volatile("csrw mepc, %0": : "r" (x));
+    return;
+}
+
+void w_pmpaddr0(uint64 x)
+{
+  asm volatile("csrw pmpaddr0, %0" : : "r" (x));
+}
+
+void w_pmpcfg0(uint64 x)
+{
+  asm volatile("csrw pmpcfg0, %0" : : "r" (x));
+}

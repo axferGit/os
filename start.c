@@ -4,15 +4,12 @@
 #include "memlayout.h"
 __attribute__ ((aligned (16))) char stack0[4096];
 
-
-void test(){
-    *((unsigned char *) 0x10000000UL) = 0x61;
-    return test();
-}
-
 void loop(){
-    return loop();
+    _printf("loop");
+    loop();
 }
+
+extern void junk();
 
 void mtrapvec(){
     _printf("trap !\n");
@@ -36,9 +33,7 @@ void mtrapvec(){
                 if (c != -1){
                     uartputc(c);
                 }
-                else{
-                    *((unsigned char *) 0x1000UL) = '.';
-                }
+                
             }
 
             // Complete the interrupt
@@ -48,34 +43,38 @@ void mtrapvec(){
         if (cause == MACHINE_TIMER_INTERRUPT){
             _printf("timer\n");
             int cpu_id = cpuid();
-            *((uint64*) a_mtimecmp(cpu_id)) = TIME + 10000000UL;
+            *((uint64*) a_mtimecmp(cpu_id)) = TIME + 100000UL;
         }
     }
     asm volatile("mret"); 
 }
 
+void timerinit(){
+    int cpu_id = cpuid();
+    *((uint64*) a_mtimecmp(cpu_id)) = 100000UL;
+}
+
+
 void start(){
+
+    //Enable MACHINE_TIMER_INTERRUPT
+    s_mie(1UL << MACHINE_TIMER_INTERRUPT);
     
-    // initialize uart
-    uartinit();
-    _printf("[OK] uartinit\n");
-    //plic init
-    plicinit();
-    _printf("[OK] plicinit\n");
-    plicinithart();
-    _printf("[OK] plichartinit\n");
+    // Delegate interrupt
+    s_mideleg(1UL << SUPERVISOR_EXTERNAL_INTERRUPT);
+
     // set trap vector
     w_mtvec((uint64)&mtrapvec);
-    // enable machine external interrupts
-    w_mie(r_mie() | 1UL << 11); //0x7FF to enable every thing
 
-    // enable Machine timer interrupts
-    w_mie(r_mie() | 1UL << 7); //0x7FF to enable every thing
-    int cpu_id = cpuid();
-    *((uint64*) a_mtimecmp(cpu_id)) = 10000000UL;
+    timerinit();
     
+    // Return
+    s_mstatus(1UL << 5 | 01UL << 11);
+    w_mepc((uint64)&junk);
 
-    // enable machine interrupts
-    w_mstatus(r_mstatus() | 1UL << 3);
-    return;    
+    w_pmpaddr0(0x3fffffffffffffull);
+    w_pmpcfg0(0xf);
+
+
+    asm volatile("mret");    
 }
