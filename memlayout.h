@@ -1,3 +1,7 @@
+// CPU
+#define NHART 1 //maximum number of cores
+
+
 // UART
 #define UART0 0x10000000UL
 #define RHR 0b0
@@ -22,8 +26,13 @@
 #define MACHINE_EXTERNAL_INTERRUPT 11UL
 #define MACHINE_TIMER_INTERRUPT 7UL
 #define SUPERVISOR_EXTERNAL_INTERRUPT 9UL
+#define SPIE 5
+#define MPP 11
+#define SUPERVISOR 0b01
+
 //CLINT
 #define CLINT 0x02000000UL
 #define a_mtime (CLINT + 0xbff8)
 #define a_mtimecmp(hart) (CLINT + 0x4000 + (hart) * 8)
-#define TIME (*(uint64*) a_mtime)
+#define TIME (*((uint64*) (a_mtime)))
+#define TIMER_INTERVAL 10000000UL

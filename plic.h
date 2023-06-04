@@ -1,4 +1,5 @@
-typedef unsigned int uint32;
+#include "riscv.h"
+
 void plicinit();
 void plicinithart();
 uint32 plicclaim();

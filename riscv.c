@@ -67,3 +67,8 @@ void w_pmpcfg0(uint64 x)
 {
   asm volatile("csrw pmpcfg0, %0" : : "r" (x));
 }
+
+void w_mscratch(uint64 x){
+    asm volatile("csrw mscratch, %0" : : "r"(x));
+    return;
+}

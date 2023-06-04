@@ -2,7 +2,11 @@
 #include "uart.h"
 #include "plic.h"
 #include "memlayout.h"
-__attribute__ ((aligned (16))) char stack0[4096];
+#include "machine_trap.h"
+
+__attribute__ ((aligned (16))) char stack0[4096 * NHART];
+__attribute__ ((aligned (16))) uint64 mscratch[32 * NHART];
+__attribute__ ((aligned (16))) uint64 Mstack0[4096 * NHART];
 
 void loop(){
     _printf("loop");
@@ -10,71 +14,51 @@ void loop(){
 }
 
 extern void junk();
+extern void mtrapvec();
 
-void mtrapvec(){
-    _printf("trap !\n");
 
-    uint64 reg_cause = r_mcause();
-    uint64 cause = reg_cause & 0x7fffffffffffffffL;
-
-    // Interrupt
-    if (reg_cause & (1L<<63)){ 
-
-        // Machine extarnal interrupt
-        if(cause == MACHINE_EXTERNAL_INTERRUPT){
-            
-            // Claim the device which triggered the interrupt
-            uint32 id = plicclaim();
-            
-            // UART interrupts
-            if (id == UART0_IRQ){
-                _printf("UART0_IRQ\n");
-                int c = uartgetc();
-                if (c != -1){
-                    uartputc(c);
-                }
-                
-            }
-
-            // Complete the interrupt
-            pliccomplete(id);
-        }
-
-        if (cause == MACHINE_TIMER_INTERRUPT){
-            _printf("timer\n");
-            int cpu_id = cpuid();
-            *((uint64*) a_mtimecmp(cpu_id)) = TIME + 100000UL;
-        }
-    }
-    asm volatile("mret"); 
-}
-
-void timerinit(){
+static inline void timerinit(){
     int cpu_id = cpuid();
-    *((uint64*) a_mtimecmp(cpu_id)) = 100000UL;
+    *((uint64*) a_mtimecmp(cpu_id)) = TIME + TIMER_INTERVAL;
+    return;
 }
 
-
-void start(){
-
+static inline void enableInterrupts(){
     //Enable MACHINE_TIMER_INTERRUPT
     s_mie(1UL << MACHINE_TIMER_INTERRUPT);
-    
-    // Delegate interrupt
-    s_mideleg(1UL << SUPERVISOR_EXTERNAL_INTERRUPT);
+    return;
+}
 
+static inline void delegateInterrupts(){
+    s_mideleg(1UL << SUPERVISOR_EXTERNAL_INTERRUPT);
+    return;
+}
+
+static inline void configMachineTrap(){
+    uint64 id = cpuid();
     // set trap vector
     w_mtvec((uint64)&mtrapvec);
+    // set mscratch[0] to the machine stack
+    mscratch[32 * id] = (uint64) &Mstack0[4096 * (id+1)];
+    w_mscratch((uint64) &mscratch[32 * id]);
+}
 
-    timerinit();
-    
-    // Return
-    s_mstatus(1UL << 5 | 01UL << 11);
+static inline void Ret(){
+    s_mstatus(1UL << SPIE | ((uint64) SUPERVISOR) << MPP);
     w_mepc((uint64)&junk);
+    asm volatile("mret");
+}
 
+static inline void physicalProtection(){
     w_pmpaddr0(0x3fffffffffffffull);
     w_pmpcfg0(0xf);
+}
 
-
-    asm volatile("mret");    
+void start(){
+    enableInterrupts();
+    delegateInterrupts();
+    configMachineTrap();
+    timerinit();
+    physicalProtection();   
+    Ret();   
 }

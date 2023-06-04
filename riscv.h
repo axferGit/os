@@ -1,4 +1,5 @@
 typedef unsigned long uint64;
+typedef unsigned int uint32;
 
 void w_mtvec(uint64);
 uint64 r_mstatus();
@@ -13,3 +14,4 @@ void s_mideleg(uint64);
 void w_mepc();
 void w_pmpaddr0(uint64);
 void w_pmpcfg0(uint64);
+void w_mscratch();
