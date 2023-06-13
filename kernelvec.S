@@ -38,15 +38,15 @@ mtrapvec:
     sd t6, 240(a0)
 
     # save a0
-    csrrw a1, mscratch,a0 
+    csrrw a1, mscratch, a0 
     sd a1, 80(a0)
 
     # all registers jave been saved
     # mscratch points to mstrach(memory)
 
     # Set the stack pointer
-    ld a1, 0(a0)
-    mv sp, a1
+    ld sp, 0(a0)
+
     #jump to mtrapvec
     call mtraphandler
 

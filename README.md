@@ -46,7 +46,7 @@ ret <-> jal ra
 The callee saves ```ra``` and ```s0/fp``` and sets its ```fp```
 ```assembly
 addi sp, sp, -16        #make place for storing ra and fp
-sd ra, 8(sp)            #store previous ra
+sd ra, 8(sp)            #store its ra (in case it calls an other function)
 sd s0, 0(sp)            #store previous fp
 addi s0, sp, 16         #set the new fp (equal to previous sp)
 ```
@@ -54,7 +54,7 @@ addi s0, sp, 16         #set the new fp (equal to previous sp)
 For return, the callee resets ```ra``` , ```fp``` and ```sp``` and jumps to ```ra```
 ```assembly
 addi sp, fp, 0          #reset sp to the previous sp
-sd ra, -8(sp)           #reset previous ra
+sd ra, -8(sp)           #reset its ra
 sd fp, -16(sp)          #reset previous fp
 jr ra                   #jump to next instruction of the previous function
 ```
@@ -133,8 +133,11 @@ Initially:
 * MCR : ```0x08``` : Gobal interrupts enabled
 * LSR : ```0x60``` : Transmitter empty and THR empty
 
-# TASKS
-* Explain trap handling
-* Set timerinterrupt
-* Delagate to supervisor mode
+# Trap handling
 
+## MTVEC
+
+One gets into machine mode only for timer interrupts. as timer interrupts can occur from either user or supervisor mode, its behaviour should be independant of the previous privilege mode. So, ```mtvec``` points to ```mtrapvec``` which saves all the registers of the core to a scratch area pointed by ```mscratch```, load the stack of the core in machine mode, and call ```machinetraphandler()``` which handles the trap. On return, this function calls ```mtrapvecret``` which retores the stack.
+
+The scratch registers has the form:
+sp (machine) | ra (ppm) | ...(ppm)
