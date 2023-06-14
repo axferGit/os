@@ -1,9 +1,11 @@
 OBJS = entry.o \
 	start.o \
 	machine_trap.o \
+	main.o \
 	plic.o \
 	uart.o \
 	riscv.o \
+	printf.o \
 	kernelvec.o
 
 CONSTANT = memlayout.h
@@ -17,14 +19,14 @@ OBJDUMP = $(TOOLPREFIX)objdump
 QEMU = qemu-system-riscv64
 GDB = gdb-multiarch
 
-CFLAGS = ggdb
+CFLAGS = ggdb -nostdlib -fno-stack-protector
 
 .PHONY : gdb
 
 
 kernel: $(OBJS) t.ld 
 	$(LD) -T t.ld -o kernel $(OBJS) 
-	$(OBJDUMP) -S kernel > kernel.asm
+	$(OBJDUMP) -d -S kernel > kernel.asm
 	$(OBJDUMP) -t kernel | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > kernel.sym
 
 qemu : kernel

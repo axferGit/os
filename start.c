@@ -1,21 +1,15 @@
-#include "riscv.h"
-#include "uart.h"
-#include "plic.h"
 #include "memlayout.h"
+#include "riscv.h"
 #include "machine_trap.h"
+#include "main.h"
+#include "printf.h"
+
 
 __attribute__ ((aligned (16))) char stack0[4096 * NHART];
 __attribute__ ((aligned (16))) uint64 mscratch[32 * NHART];
 __attribute__ ((aligned (16))) uint64 Mstack0[4096 * NHART];
 
-void loop(){
-    _printf("loop");
-    loop();
-}
-
-extern void junk();
 extern void mtrapvec();
-
 
 static inline void timerinit(){
     int cpu_id = cpuid();
@@ -45,7 +39,7 @@ static inline void configMachineTrap(){
 
 static inline void Ret(){
     s_mstatus(1UL << SPIE | ((uint64) SUPERVISOR) << MPP);
-    w_mepc((uint64)&junk);
+    w_mepc((uint64)&main);
     asm volatile("mret");
 }
 
@@ -55,6 +49,7 @@ static inline void physicalProtection(){
 }
 
 void start(){
+    myprintf("%i",1139005);
     enableInterrupts();
     delegateInterrupts();
     configMachineTrap();

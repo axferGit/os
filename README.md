@@ -141,3 +141,5 @@ One gets into machine mode only for timer interrupts. as timer interrupts can oc
 
 The scratch registers has the form:
 sp (machine) | ra (ppm) | ...(ppm)
+
+
