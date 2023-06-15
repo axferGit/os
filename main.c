@@ -1,5 +1,7 @@
 #include "uart.h"
 #include "plic.h"
+#include "printf.h"
+
 
 extern void junk();
 
@@ -9,5 +11,6 @@ void loop(){
 }
 
 void main(){
+
     junk();
 }

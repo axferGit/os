@@ -19,9 +19,9 @@ OBJDUMP = $(TOOLPREFIX)objdump
 QEMU = qemu-system-riscv64
 GDB = gdb-multiarch
 
-CFLAGS = ggdb -nostdlib -fno-stack-protector
+CFLAGS = ggdb -ffreestanding -fno-common -nostdlib -fno-stack-protector
 
-.PHONY : gdb
+.PHONY : gdb clear
 
 
 kernel: $(OBJS) t.ld 
@@ -44,6 +44,6 @@ gdb :
 %.o : %.S
 	${AS} $< -o $@
 
-clean :
+clear :
 	rm ${OBJS}
 	rm kernel kernel.asm

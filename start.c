@@ -49,11 +49,11 @@ static inline void physicalProtection(){
 }
 
 void start(){
-    myprintf("%i",1139005);
+    printf("Machine mode configuration...\n");
     enableInterrupts();
     delegateInterrupts();
     configMachineTrap();
     timerinit();
     physicalProtection();   
-    Ret();   
+    Ret();
 }

@@ -1,6 +1,11 @@
 #include "uart.h"
+#include "printf.h"
 
-void myprintf(char* s, ...){
+volatile char panicked = 0;
+
+static char digits[] = "0123456789abcdef";
+
+void printf(char* s, ...){
     //Builtin
     __builtin_va_list ap;
     __builtin_va_start(ap,s);
@@ -17,73 +22,58 @@ void myprintf(char* s, ...){
             switch (c)
             {
             case 'i': //hexa
-                print_i( __builtin_va_arg(ap,int));
+                print_int( __builtin_va_arg(ap,int),10,1);
                 break;
             
+            case 'x':
+                printf("0x");
+                print_int( __builtin_va_arg(ap,int),16,0);
+                break;
+
             case '\0':
                 uartputc('%');
+                --i;
                 break;
-            }
-
-            
+            }           
         }
-
     }
     return;
 }
 
-void print_decimal(int i){
-
-    switch (i)
-    {
-    case 0:
-        uartputc('0');
-        break;
-    case 1:
-        uartputc('1');
-        break;
-    case 2:
-        uartputc('2');
-        break;
-    case 3:
-        uartputc('3');
-        break;
-    case 4:
-        uartputc('4');
-        break;
-    case 5:
-        uartputc('5');
-        break;
-    case 6:
-        uartputc('6');
-        break;
-    case 7:
-        uartputc('7');
-        break;
-    case 8 :
-        uartputc('8');
-        break;
-    case 9:
-        uartputc('9');
-        break;
-    }
-
-    return;
-
-}
-
-void print_i(int i){
-    int v = i;
-    int b = 10;
+//print int [i] on base [b] depending on its signess [s]
+void print_int(int i,int b,int s){
+    
+    int v;
     int p = 1;
+
+    if (s && (s = (i < 0))){
+        v = -i;
+    }
+    else{
+        v = i;
+    }
+
     while((v/p) >= b){
         p = p * b;
     }
+
+    if (s){
+        uartputc('-');
+    }
+
     while(p){
-        print_decimal(v / p);
+        uartputc(digits[v/p]);
         v = v % p;
         p = p / b;
     }
     
+    return;
+}
+
+// Block all cores and print string [s].
+void panic(char* s){
+    printf(s);
+    panicked = 1;
+    while(1){}
     return;
 }
