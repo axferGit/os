@@ -2,3 +2,4 @@
 kernel*
 *.d
 .vscode/
+Images/*
