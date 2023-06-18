@@ -2,6 +2,7 @@
 #include "plic.h"
 #include "printf.h"
 #include "alloc.h"
+#include "memlayout.h"
 
 extern void junk();
 
