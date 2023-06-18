@@ -47,10 +47,3 @@ int uartgetc(){
         return -1;
     }
 }
-
-void _printf(char* string){
-    for(int i = 0; string[i] != 0x00; i=i+1){
-        uartputc(string[i]);
-    }
-    return;
-}

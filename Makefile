@@ -1,9 +1,10 @@
 OBJS = entry.o \
 	start.o \
-	machine_trap.o \
 	main.o \
+	machine_trap.o \
 	plic.o \
 	uart.o \
+	alloc.o \
 	riscv.o \
 	printf.o \
 	kernelvec.o
@@ -20,6 +21,7 @@ QEMU = qemu-system-riscv64
 GDB = gdb-multiarch
 
 CFLAGS = ggdb -ffreestanding -fno-common -nostdlib -fno-stack-protector
+QEMUOPTS = -machine virt -cpu rv64 -smp $(CORES) -m 128 -nographic -bios none -kernel kernel 
 
 .PHONY : gdb clear
 
@@ -30,7 +32,7 @@ kernel: $(OBJS) t.ld
 	$(OBJDUMP) -t kernel | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > kernel.sym
 
 qemu : kernel
-	${QEMU} -machine virt -cpu rv64 -smp $(CORES) -nographic -bios none -kernel kernel 
+	${QEMU} ${QEMUOPTS}
 
 qemu-gdb : kernel
 	${QEMU} -machine virt -cpu rv64 -smp $(CORES) -s -S -nographic -bios none -kernel kernel

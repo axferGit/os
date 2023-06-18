@@ -1,6 +1,15 @@
+// QEMU
+#define KERNBASE (0x80000000UL)
+
 // CPU
 #define NHART 1 //maximum number of cores
 
+// DRAM
+#define PHYSTOP (KERNBASE + 128 * 1024 * 1024)
+
+// PAGE
+#define PAGESIZE 4096
+#define RDNSUP(x) ((((x) / PAGESIZE) + 1) * PAGESIZE)
 
 // UART
 #define UART0 0x10000000UL

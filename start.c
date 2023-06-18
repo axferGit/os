@@ -5,9 +5,9 @@
 #include "printf.h"
 
 
-__attribute__ ((aligned (16))) char stack0[4096 * NHART];
-__attribute__ ((aligned (16))) uint64 mscratch[32 * NHART];
-__attribute__ ((aligned (16))) uint64 Mstack0[4096 * NHART];
+__attribute__ ((aligned (16))) char stack0[4096 * NHART]; // initial stack, one per hart
+__attribute__ ((aligned (16))) uint64 mscratch[32 * NHART]; // mscratch area for machine interreupt handler, one per hert
+__attribute__ ((aligned (16))) uint64 Mstack0[4096 * NHART]; // Machine stack for machine interrupts, one per hart
 
 extern void mtrapvec();
 
@@ -49,7 +49,6 @@ static inline void physicalProtection(){
 }
 
 void start(){
-    printf("Machine mode configuration...\n");
     enableInterrupts();
     delegateInterrupts();
     configMachineTrap();

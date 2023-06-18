@@ -2,10 +2,11 @@
 #include "uart.h"
 #include "plic.h"
 #include "memlayout.h"
+#include "printf.h"
 
 
 void mtraphandler(){
-    _printf("trap !\n");
+    printf("trap !\n");
 
     uint64 reg_cause = r_mcause();
     uint64 cause = reg_cause & 0x7fffffffffffffffL;
@@ -21,7 +22,7 @@ void mtraphandler(){
             
             // UART interrupts
             if (id == UART0_IRQ){
-                _printf("UART0_IRQ\n");
+                printf("UART0_IRQ\n");
                 int c = uartgetc();
                 if (c != -1){
                     uartputc(c);
@@ -34,7 +35,7 @@ void mtraphandler(){
         }
 
         if (cause == MACHINE_TIMER_INTERRUPT){
-            _printf("timer\n");
+            printf("timer\n");
             int cpu_id = cpuid();
             *((uint64*) a_mtimecmp(cpu_id)) = (TIME + TIMER_INTERVAL);
         }
