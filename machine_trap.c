@@ -34,11 +34,20 @@ void mtraphandler(){
             pliccomplete(id);
         }
 
-        if (cause == MACHINE_TIMER_INTERRUPT){
+        else if (cause == MACHINE_TIMER_INTERRUPT){
             printf("timer\n");
             int cpu_id = cpuid();
             *((uint64*) a_mtimecmp(cpu_id)) = (TIME + TIMER_INTERVAL);
         }
+        else {
+            printf("Unhandled interrupt\n");
+            while(1){}
+        }
+
     }
+    else {
+        printf("Unhandled exception\n");
+        while(1){}
+        }
     return; 
 }

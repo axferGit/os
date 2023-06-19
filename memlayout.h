@@ -8,8 +8,15 @@
 #define PHYSTOP (KERNBASE + 128 * 1024 * 1024)
 
 // PAGE
+#define SV39 (0x8UL << 60)
 #define PAGESIZE 4096
-#define RDNSUP(x) ((((x) / PAGESIZE) + 1) * PAGESIZE)
+#define PTE_CFG_BITS 10
+#define PTE_CFG_MASK 0x1ff
+#define INDEXLEVEL(va,level) (((va) >> (9*(level) + 12)) & 0x1ff)
+#define PAGE_VALID 1
+#define PAGE_READ (1 << 1)
+#define PAGE_WRITE (1 << 2)
+#define PAGE_EXECUTE (1 << 3)
 
 // UART
 #define UART0 0x10000000UL
@@ -44,4 +51,4 @@
 #define a_mtime (CLINT + 0xbff8)
 #define a_mtimecmp(hart) (CLINT + 0x4000 + (hart) * 8)
 #define TIME (*((uint64*) (a_mtime)))
-#define TIMER_INTERVAL 10000000UL
+#define TIMER_INTERVAL 30000000UL

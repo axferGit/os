@@ -7,7 +7,8 @@ OBJS = entry.o \
 	alloc.o \
 	riscv.o \
 	printf.o \
-	kernelvec.o
+	kernelvec.o \
+	vm.o
 
 CONSTANT = memlayout.h
 CORES = 1

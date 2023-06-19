@@ -20,12 +20,13 @@ void allocinit(){
     return;
 }
 
-// Allocate a page.
-// return 0 if no more page is available
+// Allocate a page, filled in with 0,
+// return 0 if no more page is available.
 void* alloc(){
     if (hd_pagelist){
         char * page = hd_pagelist;
         hd_pagelist = (char*)(*(uint64*)hd_pagelist);
+        memset(page,0);
         return page;
     }
     else{

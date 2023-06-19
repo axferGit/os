@@ -40,6 +40,7 @@ static inline void configMachineTrap(){
 static inline void Ret(){
     s_mstatus(1UL << SPIE | ((uint64) SUPERVISOR) << MPP);
     w_mepc((uint64)&main);
+    w_satp((uint64) 0);
     asm volatile("mret");
 }
 
@@ -53,6 +54,6 @@ void start(){
     delegateInterrupts();
     configMachineTrap();
     timerinit();
-    physicalProtection();   
+    physicalProtection();
     Ret();
 }

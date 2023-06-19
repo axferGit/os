@@ -65,7 +65,7 @@ void printf(char* s, ...){
             switch (c)
             {
             case 'i':
-                print_int( __builtin_va_arg(ap,int),16,1);
+                print_int( __builtin_va_arg(ap,int),10,1);
                 break;
             
             case 'p':

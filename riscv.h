@@ -1,5 +1,6 @@
 typedef unsigned long uint64;
 typedef unsigned int uint32;
+typedef uint64* t_pagetable;
 
 void w_mtvec(uint64);
 uint64 r_mstatus();
@@ -15,3 +16,5 @@ void w_mepc();
 void w_pmpaddr0(uint64);
 void w_pmpcfg0(uint64);
 void w_mscratch();
+void w_satp();
+uint64 r_satp();

@@ -69,6 +69,17 @@ void w_pmpcfg0(uint64 x)
 }
 
 void w_mscratch(uint64 x){
-    asm volatile("csrw mscratch, %0" : : "r"(x));
+    asm volatile("csrw mscratch, %0" : : "r" (x));
     return;
+}
+
+void w_satp(uint64 x){
+    asm volatile("csrw satp, %0" : : "r" (x));
+    return;
+}
+
+uint64 r_satp(){
+    uint64 x = 0;
+    asm volatile("csrr %0, satp" : "+r" (x));
+    return x;
 }
