@@ -5,22 +5,35 @@
 #include "vm.h"
 
 t_pagetable pagetable; 
+extern uint64 etext;
+extern uint64 end;
 
 void kvminit(){
     //allocate page table
     if ((pagetable = alloc()) == 0){
         panic("Fail to allocate page table\n");
     }
-    mappages(pagetable, (void*) UART0, PAGESIZE, (void*) UART0, PAGE_READ | PAGE_WRITE);
-    mappages(pagetable,(void*) PLIC, 3*PAGESIZE, (void*) PLIC, PAGE_READ | PAGE_WRITE);
+    
+    // UART
+    mappages(pagetable, (void*) UART0, PAGESIZE, (void*) UART0, PTE_READ | PTE_WRITE);
+    
+    // .text section
+    mappages(pagetable, (void*) KERNBASE, (uint64) &etext - KERNBASE, (void*) KERNBASE, PTE_READ | PTE_EXECUTE);
+
+    // .data section
+    mappages(pagetable, (void*) &etext, (uint64) &end - (uint64) &etext, (void*) &etext, PTE_READ | PTE_WRITE);
+
+    // Unused DRAM
+    mappages(pagetable,(void*) &end, PHYSTOP - (uint64) &end, (void*) PLIC, PTE_READ | PTE_WRITE);
+    
     return;
 }
 
 void kvminithart(){
     w_satp(SV39 | ((uint64)pagetable / PAGESIZE));
+    sfence_vma();
     return;
 }
-
 
 // Map the virtual pages starting from [va] with permissions [perm] to phycsical pages starting from [pa]
 // panic on error.
@@ -47,7 +60,7 @@ void mappage(t_pagetable pagetable, void* va, void* pa, uint64 perm){
     if ((pte = walk(pagetable,va,1)) == 0){
         panic("Fail mappage\n");
     };
-    *pte = ((((uint64) pa / PAGESIZE) << PTE_CFG_BITS)| (perm & PTE_CFG_MASK) | PAGE_VALID);
+    *pte = ((((uint64) pa / PAGESIZE) << PTE_CFG_BITS)| (perm & PTE_CFG_MASK) | PTE_VALID);
     return;
 }
 
@@ -64,7 +77,7 @@ void* walk(t_pagetable pagetable, void* va, int bool_alloc){
         int index = INDEXLEVEL((uint64)va,level);  
         uint64 pte = p[index];
 
-        if ((pte & PAGE_VALID) == 0){
+        if ((pte & PTE_VALID) == 0){
             if(bool_alloc){
                 
                 void* page;
@@ -72,7 +85,7 @@ void* walk(t_pagetable pagetable, void* va, int bool_alloc){
                 if((page = alloc()) == 0){
                     printf("Alloc failed\n");
                 }
-                p[index] = ((((uint64)page / PAGESIZE) << PTE_CFG_BITS) | PAGE_VALID);
+                p[index] = ((((uint64)page / PAGESIZE) << PTE_CFG_BITS) | 0 & PTE_CFG_MASK | PTE_VALID);
                 p = (uint64*) page;
             }
             else {

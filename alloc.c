@@ -20,7 +20,7 @@ void allocinit(){
     return;
 }
 
-// Allocate a page, filled in with 0,
+// return the addres of the newly allocated page, filled with 0
 // return 0 if no more page is available.
 void* alloc(){
     if (hd_pagelist){
@@ -41,7 +41,7 @@ void free(void* pa){
     hd_pagelist = (char*) pa;
     return;
 }
-
+// Set char [v] to all bytes of the page [pa]
 void memset(void* pa, char v){
     for(char* p = (char*) pa; p < (char*) pa + PAGESIZE ; p++){
         *p = v;

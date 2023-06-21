@@ -18,3 +18,4 @@ void w_pmpcfg0(uint64);
 void w_mscratch();
 void w_satp();
 uint64 r_satp();
+void sfence_vma();

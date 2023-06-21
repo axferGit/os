@@ -83,3 +83,8 @@ uint64 r_satp(){
     asm volatile("csrr %0, satp" : "+r" (x));
     return x;
 }
+
+void sfence_vma(){
+    asm volatile("sfence.vma zero, zero");
+    return;
+}

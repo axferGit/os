@@ -13,10 +13,10 @@
 #define PTE_CFG_BITS 10
 #define PTE_CFG_MASK 0x1ff
 #define INDEXLEVEL(va,level) (((va) >> (9*(level) + 12)) & 0x1ff)
-#define PAGE_VALID 1
-#define PAGE_READ (1 << 1)
-#define PAGE_WRITE (1 << 2)
-#define PAGE_EXECUTE (1 << 3)
+#define PTE_VALID 1
+#define PTE_READ (1 << 1)
+#define PTE_WRITE (1 << 2)
+#define PTE_EXECUTE (1 << 3)
 
 // UART
 #define UART0 0x10000000UL
