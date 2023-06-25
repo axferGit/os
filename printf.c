@@ -47,6 +47,13 @@ static void print_ptr(uint64 v){
     return;
 }
 
+static void print_str(char* s){
+    int i = 0;
+    for (i = 0; s[i] != '\0'; i++){
+        uartputc(s[i]);
+    };
+    return;
+}
 
 void printf(char* s, ...){
     //Builtin
@@ -70,6 +77,10 @@ void printf(char* s, ...){
             
             case 'p':
                 print_ptr( __builtin_va_arg(ap,uint64));
+                break;
+
+            case 's':
+                print_str(__builtin_va_arg(ap,char*));
                 break;
 
             case '\0':

@@ -6,7 +6,18 @@
 
 t_pagetable pagetable; 
 extern uint64 etext;
+extern uint64 edata;
 extern uint64 end;
+extern uint64 etext2;
+
+void printmemory(){
+    printf("KERNBASE = %p\n",KERNBASE);
+    printf("etext    = %p\n",&etext);
+    printf("etext2   = %p\n",&etext2);
+    printf("edata    = %p\n",&edata);
+    printf("end      = %p\n",&end);
+    return;
+}
 
 void kvminit(){
     //allocate page table
@@ -21,11 +32,11 @@ void kvminit(){
     mappages(pagetable, (void*) KERNBASE, (uint64) &etext - KERNBASE, (void*) KERNBASE, PTE_READ | PTE_EXECUTE);
 
     // .data section
-    mappages(pagetable, (void*) &etext, (uint64) &end - (uint64) &etext, (void*) &etext, PTE_READ | PTE_WRITE);
+    mappages(pagetable, (void*) &etext2, (uint64) &edata - (uint64) &etext2, (void*) &etext2, PTE_READ | PTE_WRITE);
 
     // Unused DRAM
     mappages(pagetable,(void*) &end, PHYSTOP - (uint64) &end, (void*) PLIC, PTE_READ | PTE_WRITE);
-    
+
     return;
 }
 

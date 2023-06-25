@@ -3,7 +3,7 @@
 #include "machine_trap.h"
 #include "main.h"
 #include "printf.h"
-
+#include "uart.h"
 
 __attribute__ ((aligned (16))) char stack0[4096 * NHART]; // initial stack, one per hart
 __attribute__ ((aligned (16))) uint64 mscratch[32 * NHART]; // mscratch area for machine interreupt handler, one per hert
@@ -50,6 +50,16 @@ static inline void physicalProtection(){
 }
 
 void start(){
+
+    // DEBUG only
+    uartinit();
+    printf("[OK] uartinit\n");  
+
+
+    // DEBUG commands
+
+
+    // DEBUF END
     enableInterrupts();
     delegateInterrupts();
     configMachineTrap();

@@ -14,14 +14,17 @@ void loop(){
 extern char* hd_pagetable;
 
 void main(){
-    uartinit();
-    printf("[OK] uartinit\n");
+    // uartinit();
+    // printf("[OK] uartinit\n");
     allocinit();
     printf("[OK] pageinit\n");
     kvminit();
     printf("[OK] kvminit\n");
+
+    printmemory();
+
     kvminithart();
-    printf("[OK] kvminihart\n");
+    printf("[OK] kvminihart\n");  
     
     junk();
 

@@ -18,6 +18,9 @@
 #define PTE_WRITE (1 << 2)
 #define PTE_EXECUTE (1 << 3)
 
+// PROCESS
+#define NPROC 10
+
 // UART
 #define UART0 0x10000000UL
 #define RHR 0b0
@@ -39,9 +42,12 @@
 #define NO_SOURCE 0
 
 //RISC-V
+// Interrupt and exception
 #define MACHINE_EXTERNAL_INTERRUPT 11UL
 #define MACHINE_TIMER_INTERRUPT 7UL
 #define SUPERVISOR_EXTERNAL_INTERRUPT 9UL
+#define LOAD_PAGE_FAULT 13UL
+
 #define SPIE 5
 #define MPP 11
 #define SUPERVISOR 0b01

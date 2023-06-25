@@ -53,10 +53,28 @@ void s_mideleg(uint64 x){
     return;
 }
 
+uint64 r_mepc(){
+    uint64 x = 0;
+    asm volatile("csrr %0, mepc" : "+r"(x));
+    return x;
+}
+
 void w_mepc(uint64 x){
     asm volatile("csrw mepc, %0": : "r" (x));
     return;
 }
+
+uint64 r_mtval(){
+    uint64 x = 0;
+    asm volatile("csrr %0, mtval" : "+r"(x));
+    return x;
+}
+
+void w_mtval(uint64 x){
+    asm volatile("csrw mtval, %0": : "r" (x));
+    return;
+}
+
 
 void w_pmpaddr0(uint64 x)
 {
