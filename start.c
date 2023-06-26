@@ -50,16 +50,6 @@ static inline void physicalProtection(){
 }
 
 void start(){
-
-    // DEBUG only
-    uartinit();
-    printf("[OK] uartinit\n");  
-
-
-    // DEBUG commands
-
-
-    // DEBUF END
     enableInterrupts();
     delegateInterrupts();
     configMachineTrap();
