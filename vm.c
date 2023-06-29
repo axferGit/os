@@ -21,40 +21,24 @@ void printmemory(){
     return;
 }
 
-void print_pt(t_pagetable pt){
-    uint64 l1, l2, l3;
-    uint64 pte1, pte2, pte3;
-    uint64 addr;
-    t_pagetable p1,p2,p3;
-
-    for(l1 = 0, p1 = pt; l1 < (2<<8); l1 ++){
-        pte1 = pt[l1];
-
-        if (pte1 & 0x1){
-            p2 = (uint64*)((pte1 >> 10) << 12);
-
-            for(l2 = 0; l2 < (2<<8); l2 ++){
-                pte2 = p2[l2];
-                if (pte2 & 0x1){
-                    p3 = (uint64*)((pte2 >> 10) << 12);
-                    
-                    for(l3 = 0 ; l3 < (2<<8); l3++){
-                        pte3 = p3[l3];
-                        
-                        if(pte3 & 0x1){
-                            addr = ((l1 << 18) + (l2 << 9) + l3) << 12;
-                            printf("%p - %p\n",addr,(pte3 >> 10) << 12);
-                        }
-                    }
-
-                }
+void print_pt_r(uint64* p, int level, uint64 va){
+    if (level >= 0){
+        for (int i = 0; i < (2 << 8); i++){
+            uint64 pte = p[i];
+            if(pte & 0x1){
+                print_pt_r((uint64*) ((pte >> 10) << 12), level-1, va + ((uint64)i << (level * 9 + 12)));
             }
-
         }
     }
-
+    else{
+        printf("%p - %p\n",va,(uint64)p);
+    }
+    return;
 }
 
+void print_pt(t_pagetable pt){
+    print_pt_r(pt,2,0);
+}
 
 void kvminit(){
     printmemory();
@@ -62,9 +46,10 @@ void kvminit(){
     if ((pagetable = alloc()) == 0){
         panic("Fail to allocate page table\n");
     }
-    
+
     // UART
     mappages(pagetable, (void*) UART0, PAGESIZE, (void*) UART0, PTE_READ | PTE_WRITE);
+
 
     // .text section
     mappages(pagetable, (void*) KERNBASE, (uint64) &etext - KERNBASE, (void*) KERNBASE, PTE_READ | PTE_EXECUTE);
@@ -74,7 +59,7 @@ void kvminit(){
 
     // .data .bss sections
     mappages(pagetable, (void*) &erodata, (uint64) &edata - (uint64) &erodata, (void*) &erodata, PTE_READ | PTE_WRITE);
-
+    
     // Unused DRAM
     mappages(pagetable,(void*) &end, PHYSTOP - (uint64) &end, (void*) &end, PTE_READ | PTE_WRITE);
 
