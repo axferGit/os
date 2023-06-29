@@ -16,10 +16,48 @@ void printmemory(){
     printf("erodata  = %p\n",&erodata);
     printf("edata    = %p\n",&edata);
     printf("end      = %p\n",&end);
+    printf("PHYSTOP  = %p\n",PHYSTOP);
+    
     return;
 }
 
+void print_pt(t_pagetable pt){
+    uint64 l1, l2, l3;
+    uint64 pte1, pte2, pte3;
+    uint64 addr;
+    t_pagetable p1,p2,p3;
+
+    for(l1 = 0, p1 = pt; l1 < (2<<8); l1 ++){
+        pte1 = pt[l1];
+
+        if (pte1 & 0x1){
+            p2 = (uint64*)((pte1 >> 10) << 12);
+
+            for(l2 = 0; l2 < (2<<8); l2 ++){
+                pte2 = p2[l2];
+                if (pte2 & 0x1){
+                    p3 = (uint64*)((pte2 >> 10) << 12);
+                    
+                    for(l3 = 0 ; l3 < (2<<8); l3++){
+                        pte3 = p3[l3];
+                        
+                        if(pte3 & 0x1){
+                            addr = ((l1 << 18) + (l2 << 9) + l3) << 12;
+                            printf("%p - %p\n",addr,(pte3 >> 10) << 12);
+                        }
+                    }
+
+                }
+            }
+
+        }
+    }
+
+}
+
+
 void kvminit(){
+    printmemory();
     //allocate page table
     if ((pagetable = alloc()) == 0){
         panic("Fail to allocate page table\n");
@@ -27,7 +65,7 @@ void kvminit(){
     
     // UART
     mappages(pagetable, (void*) UART0, PAGESIZE, (void*) UART0, PTE_READ | PTE_WRITE);
-    
+
     // .text section
     mappages(pagetable, (void*) KERNBASE, (uint64) &etext - KERNBASE, (void*) KERNBASE, PTE_READ | PTE_EXECUTE);
 
@@ -49,7 +87,7 @@ void kvminithart(){
     return;
 }
 
-// Map the virtual pages starting from [va] with permissions [perm] to phycsical pages starting from [pa]
+// Map the virtual pages starting from [va] with size [sz] to physical pages starting from [pa], with permissions [perm]
 // panic on error.
 void mappages(t_pagetable pagetable, void* va, uint64 sz, void* pa, uint64 perm){
     while(1){
@@ -58,15 +96,15 @@ void mappages(t_pagetable pagetable, void* va, uint64 sz, void* pa, uint64 perm)
             sz -= PAGESIZE;
             pa = (char*) pa + PAGESIZE;
             va = (char*) va + PAGESIZE;
-            continue;
         }
         else{
-            mappage(pagetable, pa, va, perm);
+            mappage(pagetable, va, pa, perm);
             break;
         }
     }
     return;
 }
+
 // Map virtual page at address [va] to physical page at address [pa] with permissions [perm]
 // panic on error
 void mappage(t_pagetable pagetable, void* va, void* pa, uint64 perm){
