@@ -75,7 +75,6 @@ void w_mtval(uint64 x){
     return;
 }
 
-
 void w_pmpaddr0(uint64 x)
 {
   asm volatile("csrw pmpaddr0, %0" : : "r" (x));
@@ -104,5 +103,20 @@ uint64 r_satp(){
 
 void sfence_vma(){
     asm volatile("sfence.vma zero, zero");
+    return;
+}
+
+void w_sscratch(uint64 x){
+    asm volatile("csrw sscratch, %0" : :"r" (x));
+    return;
+}
+
+void s_sstatus(uint64 x){
+    asm volatile("csrs sstatus, %0" : : "r"(x));
+    return;
+}
+
+void w_sepc(uint64 x){
+    asm volatile("csrw sepc, %0" : : "r" (x));
     return;
 }

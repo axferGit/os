@@ -1,4 +1,4 @@
-.section .text
+.section .kernelvec
 .global mtrapvec
 .global mtraphandler
 

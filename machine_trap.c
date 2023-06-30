@@ -3,7 +3,7 @@
 #include "plic.h"
 #include "memlayout.h"
 #include "printf.h"
-
+#include "vm.h"
 
 char* mcause_interrupt[] = {
     [0] "User sofware interrupt",
@@ -82,6 +82,16 @@ void mtraphandler(){
         case LOAD_PAGE_FAULT:
             printf("%s\n",mcause_exception[cause]);
             printf("mepc : %p\nmtval : %p\n",r_mepc(),r_mtval());
+            printf("satp : %p\n",r_satp());
+            panic("");
+            break;
+
+        case INSTRUCTION_PAGE_FAULT:
+            printf("%s\n",mcause_exception[cause]);
+            printf("mepc  : %p\n",r_mepc());
+            printf("mtval : %p\n",r_mtval());
+            printf("satp  : %p\n",r_satp());
+            print_pt((uint64*)(r_satp()<<12));
             panic("");
             break;
 

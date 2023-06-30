@@ -9,7 +9,10 @@ OBJS = entry.o \
 	printf.o \
 	kernelvec.o \
 	vm.o \
+	proc.o \
+	svec.o \
 	userproc.o
+	
 
 CONSTANT = memlayout.h
 CORES = 1

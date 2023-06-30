@@ -17,6 +17,7 @@
 #define PTE_READ (1 << 1)
 #define PTE_WRITE (1 << 2)
 #define PTE_EXECUTE (1 << 3)
+#define PTE_U (1 << 4)
 
 // PROCESS
 #define NPROC 10
@@ -46,11 +47,16 @@
 #define MACHINE_EXTERNAL_INTERRUPT 11UL
 #define MACHINE_TIMER_INTERRUPT 7UL
 #define SUPERVISOR_EXTERNAL_INTERRUPT 9UL
+#define INSTRUCTION_PAGE_FAULT 12UL
 #define LOAD_PAGE_FAULT 13UL
+
 
 #define SPIE 5
 #define MPP 11
-#define SUPERVISOR 0b01
+#define SPP 8
+#define MACHINE 3
+#define SUPERVISOR 1
+#define USER 0
 
 //CLINT
 #define CLINT 0x02000000UL

@@ -22,3 +22,6 @@ void w_mscratch();
 void w_satp();
 uint64 r_satp();
 void sfence_vma();
+void w_sscratch();
+void s_sstatus(uint64);
+void w_sepc();
