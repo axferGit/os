@@ -10,13 +10,13 @@ extern char end;
 // initialise unused DRAM in a list of pages of [PAGESIZE] bytes.
 void allocinit(){
     hd_pagelist = &end;
-    char* i = hd_pagelist;
-    for(; i + PAGESIZE < (char*) PHYSTOP ; i += PAGESIZE){
-        memset(i,(char)0);
-        *((uint64*)i) = (uint64)(i + PAGESIZE); // set next page
+    char* page ;
+    for(page = hd_pagelist; page + PAGESIZE < (char*) PHYSTOP ; page += PAGESIZE){
+        memset(page,(char)0);
+        *((uint64*)page) = (uint64)(page + PAGESIZE); // set next page
     }
-    memset(i,(char)0);
-    *((uint64*) i) = 0x0UL; // next page of last page is 0, useless as already set to zero
+    memset(page,(char)0);
+    *((uint64*) page) = 0x0UL; // next page of last page is 0, useless as already set to zero
     return;
 }
 

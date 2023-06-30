@@ -4,8 +4,10 @@
 #include "printf.h"
 #include "vm.h"
 
-t_pagetable pagetable; 
+t_pagetable kernel_pagetable;
+
 extern uint64 etext;
+extern uint64 trampoline;
 extern uint64 erodata;
 extern uint64 edata;
 extern uint64 end;
@@ -40,41 +42,53 @@ void print_pt(t_pagetable pt){
     print_pt_r(pt,2,0);
 }
 
+// Initialize virtual memory of kernel
+// panic on error
 void kvminit(){
-    printmemory();
     //allocate page table
-    if ((pagetable = alloc()) == 0){
+    if ((kernel_pagetable = alloc()) == 0){
         panic("Fail to allocate page table\n");
     }
 
     // UART
-    mappages(pagetable, (void*) UART0, PAGESIZE, (void*) UART0, PTE_READ | PTE_WRITE);
-
+    mappages(kernel_pagetable, (void*) UART0, PAGESIZE, (void*) UART0, PTE_R | PTE_W);
 
     // .text section
-    mappages(pagetable, (void*) KERNBASE, (uint64) &etext - KERNBASE, (void*) KERNBASE, PTE_READ | PTE_EXECUTE);
+    mappages(kernel_pagetable, (void*) KERNBASE, (uint64) &etext - KERNBASE, (void*) KERNBASE, PTE_R | PTE_X);
 
     // .rodata section
-    mappages(pagetable, (void*) &etext, (uint64) &erodata - (uint64) &etext, (void*) &etext, PTE_READ);
+    mappages(kernel_pagetable, (void*) &etext, (uint64) &erodata - (uint64) &etext, (void*) &etext, PTE_R);
 
     // .data .bss sections
-    mappages(pagetable, (void*) &erodata, (uint64) &edata - (uint64) &erodata, (void*) &erodata, PTE_READ | PTE_WRITE);
+    mappages(kernel_pagetable, (void*) &erodata, (uint64) &edata - (uint64) &erodata, (void*) &erodata, PTE_R | PTE_W);
     
     // Unused DRAM
-    mappages(pagetable,(void*) &end, PHYSTOP - (uint64) &end, (void*) &end, PTE_READ | PTE_WRITE);
+    mappages(kernel_pagetable,(void*) &end, PHYSTOP - (uint64) &end, (void*) &end, PTE_R | PTE_W);
+
+    // TRAMPOLIE
+    mappages(kernel_pagetable,(void*) TRAMPOLINE, PAGESIZE, (void*) &trampoline, PTE_R | PTE_X);
 
     return;
 }
 
+//Initialize SATP on hart
 void kvminithart(){
-    w_satp(SV39 | ((uint64)pagetable / PAGESIZE));
+    w_satp(MAKE_SATP(kernel_pagetable));
     sfence_vma();
     return;
 }
 
-// Map the virtual pages starting from [va] with size [sz] to physical pages starting from [pa], with permissions [perm]
+// Map the virtual pages starting from [va] with size [sz] (in bytes) to physical pages starting from [pa], with permissions [perm]
 // panic on error.
 void mappages(t_pagetable pagetable, void* va, uint64 sz, void* pa, uint64 perm){
+
+    if ((uint64)va & 0xfff){
+        panic("va not aligned on page boundary\n");
+    }
+    if ((uint64)pa & 0xfff){
+        panic("pa not aligned on page boundary\n");
+    }
+
     while(1){
         if(PAGESIZE < sz){
             mappage(pagetable, va, pa, perm);
@@ -97,7 +111,7 @@ void mappage(t_pagetable pagetable, void* va, void* pa, uint64 perm){
     if ((pte = walk(pagetable,va,1)) == 0){
         panic("Fail mappage\n");
     };
-    *pte = ((((uint64) pa / PAGESIZE) << PTE_CFG_BITS)| (perm & PTE_CFG_MASK) | PTE_VALID);
+    *pte = PAGE2PTE((uint64) pa, perm);
     return;
 }
 
@@ -107,31 +121,33 @@ void mappage(t_pagetable pagetable, void* va, void* pa, uint64 perm){
 void* walk(t_pagetable pagetable, void* va, int bool_alloc){
 
     int level;
+    int index;
     uint64* p ;
     
-    for (level = 2, p = pagetable; 0 < level ; level--){
+    for (level = 2, index = INDEXLEVEL((uint64)va,level), p = pagetable;
+        0 < level;
+        level--, index = INDEXLEVEL((uint64)va,level)){
 
-        int index = INDEXLEVEL((uint64)va,level);  
         uint64 pte = p[index];
 
-        if ((pte & PTE_VALID) == 0){
+        if ((pte & PTE_V) == 0){
             if(bool_alloc){
                 
-                void* page;
+                void* newpage;
                 
-                if((page = alloc()) == 0){
+                if((newpage = alloc()) == 0){
                     printf("Alloc failed\n");
                 }
-                p[index] = ((((uint64)page / PAGESIZE) << PTE_CFG_BITS) | 0 & PTE_CFG_MASK | PTE_VALID);
-                p = (uint64*) page;
+                p[index] = PAGE2PTE((uint64)newpage,0);
+                p = (uint64*) newpage;
             }
             else {
                 return 0;
             }
         }
         else{
-            p = (uint64*) ((p[index] >> PTE_CFG_BITS) * PAGESIZE);
+            p = (uint64*) PTE2PAGE(pte);
         }
     }
-    return &p[INDEXLEVEL((uint64)va,level)];
+    return &p[index];
 }

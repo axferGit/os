@@ -29,19 +29,19 @@ void procinit(){
     }
 
     // Stack [0x2000 - 0x2fff]
-    mappages(proc.pt,(void*) 0x2000, PAGESIZE, pstack, PTE_READ | PTE_WRITE | PTE_EXECUTE);
+    mappages(proc.pt,(void*) 0x2000, PAGESIZE, pstack, PTE_R | PTE_W | PTE_X);
     // User text [0x1000 - 0x1fff]
-    mappages(proc.pt, (void*) 0x1000, PAGESIZE, (void*) &edata, PTE_READ | PTE_WRITE | PTE_U | PTE_EXECUTE);
+    mappages(proc.pt, (void*) 0x0, PAGESIZE, (void*) &edata, PTE_R | PTE_W | PTE_U | PTE_X);
     // UART
-    mappages(proc.pt, (void*) UART0, PAGESIZE, (void*) UART0, PTE_READ | PTE_WRITE | PTE_U);
+    mappages(proc.pt, (void*) UART0, PAGESIZE, (void*) UART0, PTE_R | PTE_W | PTE_U);
     // TRAMPOLINE
-    mappages(proc.pt, (void*) &trampoline, PAGESIZE, (void*) &trampoline, PTE_READ | PTE_U | PTE_EXECUTE);
+    mappages(proc.pt, (void*) TRAMPOLINE, PAGESIZE, (void*) &trampoline, PTE_R | PTE_U | PTE_X);
 
     
 
 
     // sscratch
-    proc.regs[0] = (SV39 | ((uint64)proc.pt / PAGESIZE));
+    proc.regs[0] = MAKE_SATP((uint64)proc.pt);
 
 
     printf("proc.pt : %p\n",proc.pt);
@@ -51,7 +51,7 @@ void procinit(){
     w_sscratch((uint64) proc.regs);
     // User mode on return
     s_sstatus(((uint64) USER) << SPP);
-    w_sepc((uint64) 0x1000);
+    w_sepc((uint64) 0x0);
 
     strapret();
 

@@ -7,17 +7,25 @@
 // DRAM
 #define PHYSTOP (KERNBASE + 128 * 1024 * 1024)
 
+// VIRTUAL MEMORY
+#define MAXVA (1UL << 39) // first byte out of virtual memory
+#define TRAMPOLINE ((MAXVA) - (PAGESIZE))
+
 // PAGE
 #define SV39 (0x8UL << 60)
 #define PAGESIZE 4096
+#define MAKE_SATP(pt) ((SV39) | ((uint64)pt / (PAGESIZE)))
 #define PTE_CFG_BITS 10
-#define PTE_CFG_MASK 0x1ff
+#define PTE_CFG_MASK 0x1ffUL
+#define MASK_PAGE 0xfffffffffffUL
 #define INDEXLEVEL(va,level) (((va) >> (9*(level) + 12)) & 0x1ff)
-#define PTE_VALID 1
-#define PTE_READ (1 << 1)
-#define PTE_WRITE (1 << 2)
-#define PTE_EXECUTE (1 << 3)
-#define PTE_U (1 << 4)
+#define PTE_V (1UL << 0)
+#define PTE_R (1UL << 1)
+#define PTE_W (1UL << 2)
+#define PTE_X (1UL << 3)
+#define PTE_U (1UL << 4)
+#define PAGE2PTE(page,perm) (((((page) / (PAGESIZE)) & MASK_PAGE) << PTE_CFG_BITS) | (perm) & PTE_CFG_MASK | PTE_V)
+#define PTE2PAGE(pte) ((((pte) >> (PTE_CFG_BITS)) & MASK_PAGE) * PAGESIZE)
 
 // PROCESS
 #define NPROC 10
