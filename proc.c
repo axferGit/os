@@ -3,23 +3,17 @@
 #include "alloc.h"
 #include "printf.h"
 #include "vm.h"
+#include "proc.h"
 
 extern char* edata;
 extern void strapret();
 extern char* trampoline;
-typedef struct proc {
-    uint64 pid;
-    t_pagetable pt;
-    uint64 regs[32];
-} t_proc;
 
-t_proc proc_list[NPROC];
-uint64 process_id = 0;
+struct proc proc_list[NPROC];
 
 void procinit(){
-    t_proc proc ;
-    proc.pid = (process_id++);
-    
+    struct proc proc ;
+
     if ((proc.pt = alloc()) == 0){
         panic("Proc pt alloc failed\n");
     }
