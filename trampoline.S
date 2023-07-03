@@ -3,9 +3,9 @@
 .global uservecret
 
 uservec :
-/* Save user-proc registers */
-    csrrw a0, sscratch, a0 //swap a0 and ssracth
-    //sscratch points to p->tf in user satp mode !
+# Save user-proc registers 
+    csrrw a0, sscratch, a0 #swap a0 and ssracth
+    #sscratch points to p->tf in user satp mode !
 
     sd ra, 40(a0)
     sd sp, 48(a0)
@@ -37,39 +37,36 @@ uservec :
     sd t4, 264(a0)
     sd t5, 272(a0)
     sd t6, 280(a0)
-    // save a0
-    csrw a1, sscratch
+    # save a0
+    csrr a1, sscratch
     sd a1, 112(a0)
 
-/* Load kernel-proc registers */
-    // stack pointer
+# Load kernel-proc registers 
+    # stack pointer
     ld sp, 8(a0)
-    // load ra
+    # load ra
     ld t0, 24(a0)
-    // page table
+    # page table
     ld t1, 0(a0)
     csrw satp, t1
     sfence.vma zero, zero
-    //call ra
+    #call ra
     jr t0
 
 
 uservecret:
-    // load p->tf in kernel satp mode !
-    csrr a0, sscratch
-    // stvec
+    # uservecret(TRAPFRAME,pagetable) in user-mode satp
+    # a0 = TRAPFRAME
+    # a1 = pagetable
+    
+    # satp
+    csrw satp, a1
+    sfence.vma zero, zero
+    # stvec
     sd t0, 288(a0)
     csrw stvec, t0
-    //trapframe
-    sd t0, 296(a0)
-    csrw sscratch, t0
-    // satp
-    sd t0, 304(a0)
-    csrw satp, t0
-    sfence.vma zero, zero
-    // load p->tf in user kernel satp mode !
-    csrr a0, sscratch
-    // save a0
+
+    # save a0
     sd t0, 112(a0)
     csrw sscratch, t0
 
