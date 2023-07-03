@@ -23,8 +23,12 @@ void main(){
     printf("[OK] kvminit\n");
     kvminithart();
     printf("[OK] kvminihart\n");
-
     procinit();
+    printf("[OK] kvminihart\n");
+    
+    
+    proclaunch();
+
 
     junk();
 }

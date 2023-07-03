@@ -189,6 +189,10 @@ has:
 Each source is set with a priority.
 
 # TODO:
-* read ld manual
-* page allocation
-* kvminit
+* Proc structure
+* procinit
+* first proc
+* exceptions
+* delegation ?
+* sceduler
+* 

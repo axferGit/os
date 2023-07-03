@@ -10,6 +10,8 @@
 // VIRTUAL MEMORY
 #define MAXVA (1UL << 39) // first byte out of virtual memory
 #define TRAMPOLINE ((MAXVA) - (PAGESIZE))
+#define TRAPFRAME ((MAXVA) - 2 * (PAGESIZE))
+#define STACK ((MAXVA) - 3 * (PAGESIZE))
 
 // PAGE
 #define SV39 (0x8UL << 60)

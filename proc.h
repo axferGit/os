@@ -37,17 +37,14 @@ struct trapframe {
     /* 264 */ uint64 t4;
     /* 272 */ uint64 t5;
     /* 280 */ uint64 t6;
-
-    // In user satp mode !
-    /* 288 */ uint64 trampoline;
-    /* 296 */ uint64 trapframe;
-    /* 304 */ uint64 pt;
 };
 
 struct proc {
     t_pagetable pt;
+    char * stack;
     struct trapframe * trapframe ;
 };
 
 
 void procinit();
+void proclaunch();

@@ -5,7 +5,8 @@ SECTIONS
 {
   . = 0x80000000;
   .text ALIGN(0x1000) : { 
-    EXCLUDE_FILE (userproc.o) * (.text .kernelvec)
+    EXCLUDE_FILE (userproc.o) * (.text)
+    * (.kernelvec)
     . = ALIGN(0x1000);
     PROVIDE(trampoline = .);
     *(.trampoline)

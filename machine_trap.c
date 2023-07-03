@@ -81,8 +81,9 @@ void mtraphandler(){
 
         case LOAD_PAGE_FAULT:
             printf("%s\n",mcause_exception[cause]);
-            printf("mepc : %p\nmtval : %p\n",r_mepc(),r_mtval());
-            printf("satp : %p\n",r_satp());
+            printf("mepc  : %p\n",r_mepc());
+            printf("mtval : %p\n",r_mtval());
+            printf("satp  : %p\n",r_satp());
             panic("");
             break;
 
@@ -91,7 +92,6 @@ void mtraphandler(){
             printf("mepc  : %p\n",r_mepc());
             printf("mtval : %p\n",r_mtval());
             printf("satp  : %p\n",r_satp());
-            print_pt((uint64*)(r_satp()<<12));
             panic("");
             break;
 

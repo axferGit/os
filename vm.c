@@ -12,36 +12,6 @@ extern uint64 erodata;
 extern uint64 edata;
 extern uint64 end;
 
-void printmemory(){
-    printf("KERNBASE = %p\n",KERNBASE);
-    printf("etext    = %p\n",&etext);
-    printf("erodata  = %p\n",&erodata);
-    printf("edata    = %p\n",&edata);
-    printf("end      = %p\n",&end);
-    printf("PHYSTOP  = %p\n",PHYSTOP);
-    
-    return;
-}
-
-void print_pt_r(uint64* p, int level, uint64 va){
-    if (level >= 0){
-        for (int i = 0; i < (2 << 8); i++){
-            uint64 pte = p[i];
-            if(pte & 0x1){
-                print_pt_r((uint64*) ((pte >> 10) << 12), level-1, va + ((uint64)i << (level * 9 + 12)));
-            }
-        }
-    }
-    else{
-        printf("%p - %p\n",va,(uint64)p);
-    }
-    return;
-}
-
-void print_pt(t_pagetable pt){
-    print_pt_r(pt,2,0);
-}
-
 // Initialize virtual memory of kernel
 // panic on error
 void kvminit(){
@@ -65,8 +35,8 @@ void kvminit(){
     // Unused DRAM
     mappages(kernel_pagetable,(void*) &end, PHYSTOP - (uint64) &end, (void*) &end, PTE_R | PTE_W);
 
-    // TRAMPOLIE
-    mappages(kernel_pagetable,(void*) TRAMPOLINE, PAGESIZE, (void*) &trampoline, PTE_R | PTE_X);
+    // TRAMPOLINE
+    mappages(kernel_pagetable,(void*) TRAMPOLINE, PAGESIZE, (void*) &trampoline, PTE_X);
 
     return;
 }
@@ -151,3 +121,48 @@ void* walk(t_pagetable pagetable, void* va, int bool_alloc){
     }
     return &p[index];
 }
+
+void printvm(){
+    printf("MAXVA : %p\n",MAXVA);
+    printf("TRAMPOLINE : %p\n",TRAMPOLINE);
+    printf("TRAPFRAME : %p\n",TRAPFRAME);
+    printf("STACK : %p\n",STACK);
+}
+
+void printmemory(){
+    printf("KERNBASE = %p\n",KERNBASE);
+    printf("etext    = %p\n",&etext);
+    printf("erodata  = %p\n",&erodata);
+    printf("edata    = %p\n",&edata);
+    printf("end      = %p\n",&end);
+    printf("PHYSTOP  = %p\n",PHYSTOP);
+    
+    return;
+}
+
+void print_pt_r(uint64* p, int level, uint64 va){
+    if (level >= 0){
+        for (int i = 0; i < (2 << 8); i++){
+            uint64 pte = p[i];
+            if(pte & 0x1){
+                print_pt_r((uint64*) ((pte >> 10) << 12), level-1, va + ((uint64)i << (level * 9 + 12)));
+            }
+        }
+    }
+    else{
+        printf("%p - %p\n",va,(uint64)p);
+    }
+    return;
+}
+
+void print_pt(t_pagetable pt){
+    print_pt_r(pt,2,0);
+}
+
+// void print_page(t_pagetable pt, uint64 va){
+//     int level;
+//     uint64 p;
+//     for (level = 2, p = va; 0 < level ; level++){
+//         uint64 pte = pt
+//     }
+// }
