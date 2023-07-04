@@ -6,9 +6,9 @@
 #include "proc.h"
 
 extern char* edata;
-extern char* uservecret;
+extern void uservecret(uint64,uint64);
 extern char* trampoline;
-
+extern t_pagetable kernel_pagetable;
 struct proc proc_list[NPROC];
 
 void procinit(){
@@ -36,10 +36,10 @@ void procinit(){
             panic("Proc pstack alloc failed\n");
         }
         proc -> trapframe -> sp = (uint64) STACK + PAGESIZE - 1 ;
-        mappages(proc -> pt,(void*) STACK, PAGESIZE, proc -> stack, PTE_U | PTE_R | PTE_W | PTE_X);
+        mappages(proc -> pt,(void*) STACK, PAGESIZE, proc -> stack, PTE_U | PTE_X | PTE_R | PTE_W);
 
         // UART
-        mappages(proc -> pt, (void*) UART0, PAGESIZE, (void*) UART0, PTE_R | PTE_W | PTE_U);
+        mappages(proc -> pt, (void*) UART0, PAGESIZE, (void*) UART0, PTE_U | PTE_R | PTE_W);
 
         // text
         mappages(proc -> pt, (void*) 0x0, PAGESIZE, (void*) &edata, PTE_U | PTE_X | PTE_R | PTE_W);
@@ -51,18 +51,8 @@ void procinit(){
 void proclaunch(){
     struct proc proc = proc_list[0];
     
-    printmemory();
-    printvm();
-    printf("proc0\n");
-    printf("pt : %p\n",proc.pt);
-    printf("trapframe : %p\n",proc.trapframe);
-
-    printf("uservecret %p\n",(uint64) &uservecret);
-    printf("trampoline %p\n",(uint64) &trampoline);
-    printf("TRAMPOLINE %p\n",(uint64) TRAMPOLINE);
-    printf("TRAMPOLINE + uservecret - trampoline %p\n",(uint64) (TRAMPOLINE + ((uint64) &uservecret - (uint64) &trampoline)));
     w_sepc((uint64) 0x0);
     s_sstatus(((uint64) USER) << SPP);
 
-    ((void (*) (uint64,uint64)) (TRAMPOLINE + ((uint64) &uservecret - (uint64) &trampoline))) (TRAPFRAME, (uint64) MAKE_SATP(proc_list[0].pt));
+    (((void (*) (uint64,uint64)) (TRAMPOLINE + ((uint64) &uservecret - (uint64) &trampoline)))) (TRAPFRAME, (uint64) MAKE_SATP(proc_list[0].pt));
 }

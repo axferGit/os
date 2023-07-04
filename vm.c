@@ -36,7 +36,7 @@ void kvminit(){
     mappages(kernel_pagetable,(void*) &end, PHYSTOP - (uint64) &end, (void*) &end, PTE_R | PTE_W);
 
     // TRAMPOLINE
-    mappages(kernel_pagetable,(void*) TRAMPOLINE, PAGESIZE, (void*) &trampoline, PTE_X);
+    mappages(kernel_pagetable,(void*) TRAMPOLINE, PAGESIZE, (void*) &trampoline, PTE_R | PTE_W | PTE_X);
 
     return;
 }
@@ -159,10 +159,22 @@ void print_pt(t_pagetable pt){
     print_pt_r(pt,2,0);
 }
 
-// void print_page(t_pagetable pt, uint64 va){
-//     int level;
-//     uint64 p;
-//     for (level = 2, p = va; 0 < level ; level++){
-//         uint64 pte = pt
-//     }
-// }
+void print_page(t_pagetable pt, uint64 va){
+    int level;
+    t_pagetable p;
+    for (level = 2, p = pt; 0 < level ; level--){
+        uint64 pte = p[INDEXLEVEL(va,level)];
+        if ((pte & 0xf) != 0x1 ){
+            printf("Pb page at level %i\n %p\n",level,pte);
+            panic("");
+        }
+        p = (uint64*) PTE2PAGE(pte);
+        
+    }
+    uint64 pte = p[INDEXLEVEL(va,level)];
+    printf("Mapping successfull\n");
+    printf("Page va : %p : %p\n",(va / PAGESIZE) * PAGESIZE,va);
+    printf("Page pa : %p : %p\n", PTE2PAGE(pte), PTE2PAGE(pte) + (va % PAGESIZE));
+    printf("Page pa flags : %p\n", pte & PTE_CFG_MASK);
+    return;
+}

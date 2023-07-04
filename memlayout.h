@@ -8,7 +8,7 @@
 #define PHYSTOP (KERNBASE + 128 * 1024 * 1024)
 
 // VIRTUAL MEMORY
-#define MAXVA (1UL << 39) // first byte out of virtual memory
+#define MAXVA (1L << (9 + 9 + 9 + 12 - 1)) // first byte out of virtual memory
 #define TRAMPOLINE ((MAXVA) - (PAGESIZE))
 #define TRAPFRAME ((MAXVA) - 2 * (PAGESIZE))
 #define STACK ((MAXVA) - 3 * (PAGESIZE))
@@ -18,7 +18,7 @@
 #define PAGESIZE 4096
 #define MAKE_SATP(pt) ((SV39) | ((uint64)pt / (PAGESIZE)))
 #define PTE_CFG_BITS 10
-#define PTE_CFG_MASK 0x1ffUL
+#define PTE_CFG_MASK 0x3ffUL
 #define MASK_PAGE 0xfffffffffffUL
 #define INDEXLEVEL(va,level) (((va) >> (9*(level) + 12)) & 0x1ff)
 #define PTE_V (1UL << 0)

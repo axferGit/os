@@ -24,7 +24,7 @@ void main(){
     kvminithart();
     printf("[OK] kvminihart\n");
     procinit();
-    printf("[OK] kvminihart\n");
+    printf("[OK] procinit\n");
     
     
     proclaunch();

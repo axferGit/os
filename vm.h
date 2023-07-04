@@ -8,3 +8,4 @@ void* walk(t_pagetable, void* , int);
 void printmemory();
 void print_pt(t_pagetable);
 void printvm();
+void print_page(t_pagetable, uint64);

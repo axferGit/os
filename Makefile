@@ -26,7 +26,7 @@ QEMU = qemu-system-riscv64
 GDB = gdb-multiarch
 
 CFLAGS = ggdb -ffreestanding -fno-common -nostdlib -fno-stack-protector
-QEMUOPTS = -machine virt -cpu rv64 -smp $(CORES) -m 128 -nographic -bios none -kernel kernel 
+QEMUOPTS = -machine virt -cpu rv64 -smp $(CORES) -m 128M -nographic -bios none -kernel kernel 
 
 .PHONY : gdb clear
 

@@ -189,9 +189,6 @@ has:
 Each source is set with a priority.
 
 # TODO:
-* Proc structure
-* procinit
-* first proc
 * exceptions
 * delegation ?
 * sceduler

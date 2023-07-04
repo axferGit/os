@@ -1,7 +1,7 @@
 .section .trampoline
 .global uservec
 .global uservecret
-
+.align 4
 uservec :
 # Save user-proc registers 
     csrrw a0, sscratch, a0 #swap a0 and ssracth
@@ -57,7 +57,7 @@ uservec :
 uservecret:
     # uservecret(TRAPFRAME,pagetable) in user-mode satp
     # a0 = TRAPFRAME
-    # a1 = pagetable
+    # a1 = pagetable of user process
     
     # satp
     csrw satp, a1
