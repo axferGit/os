@@ -62,9 +62,6 @@ uservecret:
     # satp
     csrw satp, a1
     sfence.vma zero, zero
-    # stvec
-    sd t0, 288(a0)
-    csrw stvec, t0
 
     # save a0
     sd t0, 112(a0)

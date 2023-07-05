@@ -4,6 +4,8 @@
 #include "printf.h"
 #include "vm.h"
 #include "proc.h"
+#include "trap.h"
+
 
 extern char* edata;
 extern void uservecret(uint64,uint64);
@@ -18,7 +20,7 @@ void procinit(){
         proc = &proc_list[i];
         
         // pagetable
-        if ((proc ->pt = alloc()) == 0){
+        if ((proc->pt = alloc()) == 0){
             panic("Proc pt alloc failed\n");
         }
         
@@ -30,6 +32,20 @@ void procinit(){
             panic("Proc trapframe alloc failed\n");
         }
         mappages(proc -> pt, (void*) TRAPFRAME, PAGESIZE, (void*) proc -> trapframe, PTE_R | PTE_W);
+        
+        // kernel
+        proc -> trapframe -> k_pt = (uint64) kernel_pagetable;
+        proc->trapframe->k_ra = (uint64) &traphandler;
+
+        void* k_stack;
+        if ((k_stack = alloc()) == 0){
+            panic("Fail to alloc k_stack\n");
+        }
+        mappages(proc->pt,(void*) TRAMPOLINE - (2*i +1)* PAGESIZE,PAGESIZE,k_stack,PTE_R | PTE_W);
+        mappages(proc->pt,(void*) TRAMPOLINE - (2*i +2)* PAGESIZE,PAGESIZE, 0x0, 0x0);
+        
+        proc->trapframe->k_sp = TRAMPOLINE - (2*i +1)* PAGESIZE + PAGESIZE -1;
+        
 
         // stack
         if((proc -> stack = alloc()) == 0){
@@ -53,6 +69,7 @@ void proclaunch(){
     
     w_sepc((uint64) 0x0);
     s_sstatus(((uint64) USER) << SPP);
+    printf("[OK] proclaunch\n");
 
     (((void (*) (uint64,uint64)) (TRAMPOLINE + ((uint64) &uservecret - (uint64) &trampoline)))) (TRAPFRAME, (uint64) MAKE_SATP(proc_list[0].pt));
 }

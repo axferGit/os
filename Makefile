@@ -10,6 +10,7 @@ OBJS = entry.o \
 	kernelvec.o \
 	vm.o \
 	proc.o \
+	trap.o \
 	trampoline.o \
 	userproc.o
 	
