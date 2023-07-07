@@ -23,8 +23,9 @@ static inline void enableInterrupts(){
     return;
 }
 
-static inline void delegateInterrupts(){
+static inline void delegateTrap(){
     s_mideleg(1UL << SUPERVISOR_EXTERNAL_INTERRUPT);
+    s_medeleg(1UL << 8);  //TODO: propre !
     return;
 }
 
@@ -50,8 +51,8 @@ static inline void physicalProtection(){
 }
 
 void start(){
-    enableInterrupts();
-    delegateInterrupts();
+    //enableInterrupts();
+    delegateTrap();
     configMachineTrap();
     timerinit();
     physicalProtection();

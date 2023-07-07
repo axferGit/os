@@ -189,7 +189,7 @@ has:
 Each source is set with a priority.
 
 # TODO:
+* delegation
 * exceptions
-* delegation ?
 * sceduler
 * 

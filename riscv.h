@@ -3,6 +3,7 @@ typedef unsigned int uint32;
 typedef uint64* t_pagetable;
 
 void w_mtvec(uint64);
+void w_stvec(uint64);
 uint64 r_mstatus();
 void w_mstatus(uint64);
 void s_mstatus(uint64);
@@ -12,6 +13,7 @@ uint64 cpuid();
 uint64 r_mcause();
 void s_mie(uint64);
 void s_mideleg(uint64);
+void s_medeleg(uint64);
 uint64 r_mepc();
 void w_mepc();
 uint64 r_mtval();

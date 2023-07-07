@@ -5,7 +5,7 @@
 uservec :
 # Save user-proc registers 
     csrrw a0, sscratch, a0 #swap a0 and ssracth
-    #sscratch points to p->tf in user satp mode !
+    #sscratch points to TRAPFRAME in user satp mode !
 
     sd ra, 40(a0)
     sd sp, 48(a0)
@@ -38,8 +38,8 @@ uservec :
     sd t5, 272(a0)
     sd t6, 280(a0)
     # save a0
-    csrr a1, sscratch
-    sd a1, 112(a0)
+    csrr t0, sscratch
+    sd t0, 112(a0)
 
 # Load kernel-proc registers 
     # stack pointer
@@ -63,7 +63,7 @@ uservecret:
     csrw satp, a1
     sfence.vma zero, zero
 
-    # save a0
+    # save a0 in sscratch
     sd t0, 112(a0)
     csrw sscratch, t0
 
@@ -97,6 +97,7 @@ uservecret:
     ld t4, 264(a0)
     ld t5, 272(a0)
     ld t6, 280(a0)
+    # swap sscratch (=a0) and a0 (=TRAPFRAME)
     csrrw a0, sscratch, a0
 
     sret

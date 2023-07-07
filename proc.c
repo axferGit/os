@@ -6,9 +6,9 @@
 #include "proc.h"
 #include "trap.h"
 
-
 extern char* edata;
 extern void uservecret(uint64,uint64);
+extern void uservec();
 extern char* trampoline;
 extern t_pagetable kernel_pagetable;
 struct proc proc_list[NPROC];
@@ -34,17 +34,17 @@ void procinit(){
         mappages(proc -> pt, (void*) TRAPFRAME, PAGESIZE, (void*) proc -> trapframe, PTE_R | PTE_W);
         
         // kernel
-        proc -> trapframe -> k_pt = (uint64) kernel_pagetable;
+        proc -> trapframe -> k_pt = (uint64) MAKE_SATP(kernel_pagetable);
         proc->trapframe->k_ra = (uint64) &traphandler;
 
         void* k_stack;
         if ((k_stack = alloc()) == 0){
             panic("Fail to alloc k_stack\n");
         }
-        mappages(proc->pt,(void*) TRAMPOLINE - (2*i +1)* PAGESIZE,PAGESIZE,k_stack,PTE_R | PTE_W);
-        mappages(proc->pt,(void*) TRAMPOLINE - (2*i +2)* PAGESIZE,PAGESIZE, 0x0, 0x0);
+        mappages(kernel_pagetable,(void*) TRAPFRAME - (2*i +1)* PAGESIZE, PAGESIZE, k_stack, PTE_R | PTE_W);
+        mappages(kernel_pagetable,(void*) TRAPFRAME - (2*i +2)* PAGESIZE, PAGESIZE, 0x0, 0x0);
         
-        proc->trapframe->k_sp = TRAMPOLINE - (2*i +1)* PAGESIZE + PAGESIZE -1;
+        proc->trapframe->k_sp = TRAPFRAME - (2*i +1)* PAGESIZE + PAGESIZE -1;
         
 
         // stack
@@ -69,7 +69,14 @@ void proclaunch(){
     
     w_sepc((uint64) 0x0);
     s_sstatus(((uint64) USER) << SPP);
+    w_stvec((uint64)(TRAMPOLINE + ((uint64) &uservec - (uint64) &trampoline)));
+    
     printf("[OK] proclaunch\n");
+    printf("proc satp : %p\nmake satp : %p\n",proc_list[0].pt,MAKE_SATP(proc_list[0].pt));
+    printf("TRAPFRAME :%p\n tf : %p\n",TRAPFRAME, proc.trapframe);
+    printf("TRAMPOLINE :%p\n",TRAMPOLINE);
 
+    printf("k_pt %p : %p\n",proc.trapframe->k_pt, kernel_pagetable);
+    printf("@tp : %p, @k_pt : %p\n",proc.trapframe,&proc.trapframe->k_pt);
     (((void (*) (uint64,uint64)) (TRAMPOLINE + ((uint64) &uservecret - (uint64) &trampoline)))) (TRAPFRAME, (uint64) MAKE_SATP(proc_list[0].pt));
 }

@@ -2,6 +2,7 @@ struct trapframe {
     // Kernel proc
     /*   0 */ uint64 k_pt;
     /*   8 */ uint64 k_sp;
+    /*  16 */ uint64 foo;
     /*  24 */ uint64 k_ra;
 
     // User proc

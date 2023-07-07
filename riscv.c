@@ -4,6 +4,11 @@ void w_mtvec(uint64 f){
     asm volatile("csrw mtvec, %0" : : "r" (f));
 }
 
+void w_stvec(uint64 x){
+    asm volatile("csrw stvec, %0" : :"r" (x));
+    return;
+}
+
 uint64 r_mstatus(){
     uint64 x = 0;
     asm volatile("csrr %0, mstatus" : "+r" (x):); /// a voir si bonnes operandes
@@ -50,6 +55,11 @@ uint64 r_mcause(){
 
 void s_mideleg(uint64 x){
     asm volatile("csrs mideleg, %0" : : "r"(x));
+    return;
+}
+
+void s_medeleg(uint64 x){
+    asm volatile("csrs medeleg, %0" : : "r" (x));
     return;
 }
 
