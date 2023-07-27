@@ -43,34 +43,57 @@
 #define LSR 0b101
 
 //PLIC
-#define PLIC 0x0c000000UL
-#define a_PLIC_PRIORITY(source) (PLIC + (source) * 4)
-#define a_PLIC_MACHINE_INTERRUPT(hart) (PLIC + 0x2000 + (hart) * 0x100)
-#define a_PLIC_MACHINE_THRESHOLD(hart) (PLIC + 0x200000 + (hart) * 0x2000)
-#define a_PLIC_MACHINE_CLAIM(hart) (PLIC + 0x200004 + (hart) * 0x2000)
-#define a_PLIC_MACHINE_COMPLETE(hart) (a_PLIC_MACHINE_CLAIM(hart))
+#define PLIC_BASE 0x0c000000UL
 #define UART0_IRQ 10
 #define NO_SOURCE 0
+#define PLIC_PRIORITY(source) (PLIC_BASE + 4 * (source))
+#define PLIC_ENABLE(target) (PLIC_BASE + 0x2000 + 0x80 * (target))
+#define PLIC_THRESHOLD(target) (PLIC_BASE + 0x200000 + 0x1000 * (target))
+#define PLIC_CLAIM(target) (PLIC_BASE + 0x200000 + 0x4 + 0x1000 * (target))
+#define PLIC_COMPLETE(target) (PLIC_CLAIM(target))
 
 //RISC-V
-// Interrupt and exception
-#define MACHINE_EXTERNAL_INTERRUPT 11UL
-#define MACHINE_TIMER_INTERRUPT 7UL
-#define SUPERVISOR_EXTERNAL_INTERRUPT 9UL
-#define INSTRUCTION_PAGE_FAULT 12UL
-#define LOAD_PAGE_FAULT 13UL
+// Interrupt
+#define MEI (11UL)
+#define SEI (9UL)
+#define UEI (8UL)
+#define MTI (7UL)
+#define STI (5UL)
+#define UTI (4UL)
+#define MSI (3UL)
+#define SSI (1UL)
+#define USI (0UL)
+
+// Exception
+#define INSTRUCTION_ADDRESS_MISALIGNED (0UL)
+#define INSTRUCTION_ACCESS_FAULT (1UL)
+#define ILLEGAL_INSTRUCTION (2UL)
+#define BREAKPOINT (3UL)
+#define LOAD_ADDRESS_MISALIGNED (4UL)
+#define LOAD_ACCESS_FAULT (5UL)
+#define STORE_AMO_ADDRESS_MISALIGNED (6UL)
+#define STORE_AMO_ACCESS_FAULT (7UL)
+#define ENVIRONMENT_CALL_FROM_U_MODE (8UL)
+#define ENVIRONMENT_CALL_FROM_S_MODE (9UL)
+#define ENVIRONMENT_CALL_FROM_M_MODE (11UL)
+#define INSTRUCTION_PAGE_FAULT (12UL)
+#define LOAD_PAGE_FAULT (13UL)
+#define STORE_AMO_PAGE_FAULT (15UL)
 
 
 #define SPIE 5
 #define MPP 11
 #define SPP 8
-#define MACHINE 3
-#define SUPERVISOR 1
-#define USER 0
+#define MACHINE (3UL)
+#define SUPERVISOR (1UL)
+#define USER (0UL)
 
 //CLINT
-#define CLINT 0x02000000UL
-#define a_mtime (CLINT + 0xbff8)
-#define a_mtimecmp(hart) (CLINT + 0x4000 + (hart) * 8)
-#define TIME (*((uint64*) (a_mtime)))
+#define CLINT_BASE (0x02000000UL)
+#define CLINT_MTIME (CLINT_BASE + 0xbff8)
+#define CLINT_MTIMECMP(hart) (CLINT_BASE + 0x4000 + 8 * (hart))
+#define TIME (*((uint64*) (CLINT_MTIME)))
 #define TIMER_INTERVAL 30000000UL
+
+// SYSCALL
+#define S_SYSCALL_HARTID (1)

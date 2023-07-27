@@ -39,7 +39,7 @@ call f :
 ```
 
 ```assembly
-ret <-> jal ra
+ret <-> jalr zero, ra, 0
 ```
 
 
@@ -105,7 +105,7 @@ At the end, the fucntion ```start``` is called.
 
 ## PLIC (Platform level interrupt controller)
 
-The PLIC make the link between external components and the microprocessor. It is the source of ```external interrupts```.
+The PLIC makes the link between external components and the microprocessor. It is the source of ```external interrupts```.
 External devices are connected to the PLIC through the ```irq``` wire. This wire is pulled up/down (in case of level trigger) to signal an interrupt has occured on the device, then the PLIC will warn the core.
 
 Configuration
@@ -114,13 +114,16 @@ Configuration
 * for each target (core x mode) set the priority threshold
 
 Rules
-* a target will be warned only if the source is connected to the core and the source's priority is greater then the target's threshold
+* a target will be warned only if the source is connected to the core and the source's priority is greater than the target's threshold
 * when a source raises an interruption, a pending bit is set in the PLIC and MEIP too.
-* if a target is triggered, it should claim the PLIC to know which source raised the interruption. Only one target will be given the id of the source, the orther targets will be given zero (does not match any source). The claim clear the pending bit in PLIC and possibly in MEIP if there is no other pending interrupt for that target.
+* if a target is triggered, it should claim the PLIC to know which source raised the interruption. Only one target will be given the id of the source, the other targets will be given zero (does not match any source). The claim clears the pending bit in PLIC and possibly in MEIP if there is no other pending interrupt for that target.
 * once a target has finished dealing with an interrupt, it must warn the PLIC, so that it becomes available for dealing with other interrupts.
 
 Qemu
 * there are 16 targets (8 cores and 2 modes (M, S))
+
+### Sources
+* https://github.com/riscv/riscv-plic-spec/blob/master/riscv-plic.adoc
 
 ## Serial I/O
 Uart 16550A is virtualized by Qemu. It is in charge of converting data from the CPU (parallel) to the serial port (serial) and each other.
@@ -174,7 +177,7 @@ Each Target defines a threshold. An interrupt will be sent to the target, only i
 * the source is connected to the target
 * the priority of the source is greater than the threshold of the target
 
-In result the extenal interrupt bit in ```mip``` for the target's mode will be set.
+In result, the extenal interrupt bit in ```mip``` for the target's mode will be set.
 
 Then each target has to claim the interrupt (reading in their ```claim``` register the id of the source). Only one target we get the id of the source, the others will get zero. This clears the pending bit. 
 

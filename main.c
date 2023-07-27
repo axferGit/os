@@ -13,10 +13,14 @@ void loop(){
     loop();
 }
 extern char* hd_pagetable;
-
+extern uint64 hartid();
 void main(){
     uartinit();
     printf("[OK] uartinit\n");
+    plicinit();
+    printf("[OK] plicinit\n");
+    plicinithart();
+    printf("[OK] plicinithart\n");
     allocinit();
     printf("[OK] allocinit\n");
     kvminit();
@@ -26,6 +30,7 @@ void main(){
     procinit();
     printf("[OK] procinit\n");
     
+    printf("HARTID : %p\n",hartid());
     
     proclaunch();
 

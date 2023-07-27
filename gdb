@@ -3,5 +3,9 @@ layout split
 layout regs
 focus cmd
 #Comments
-b * 0x3ffffff090
-b * 0x3ffffff098
+#ecall
+b * 0x80001840
+#mtrapvec 
+b * 0x80001730
+#mtrapret
+b * 0x800017b8 

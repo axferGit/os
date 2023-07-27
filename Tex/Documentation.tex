@@ -1,0 +1,182 @@
+\documentclass[10pt, a4paper]{article}
+\usepackage{hyperref}
+
+\begin{document}
+
+\section{Booting the kernel}
+\subsection{Qemu}
+
+Qemu starts by executing the code stored in the ROM (0x1000).
+This code does:
+\begin{itemize}
+\item a0 = mhartid
+\item a1 = PHYSTOP
+\item a2 = end of the ROM code \#useless
+\item pc = KERNBASE (PHYSTART)
+\end{itemize}
+
+So, the kernel code should be loaded at KERNBASE (0x80000000). As Qemu loads the virtual address space of the binary file, we need to link so that the code starts at KERNBASE. This step is done in the linking phase.
+
+\subsection{entry.S}
+
+entry.S is loaded at PHYBASE (0x80000000).
+The code aims at providing each core with a stack and then calling the kernel code.
+
+The stacks are defined in the C code as global arrays.
+
+\section{Core Local Interruptor (CLINT)}
+
+The CLINT is responsible of timer interrupts. It contains a \textbf{MTIME} register which is incremented automatically and \textbf{MTIMECMP} registers for each hart.
+
+Whenever MTIMECMP >= MTIME, a \textbf{timer interrupt} is raised for the hart. This interrupt is reflected in \textbf{MTIP} bit of the \textbf{mip} register.
+MTIMECMP needs to be incremented to clear the timer interrupt.\\
+
+So, the CLINT can only generate timer interrupt for the \textbf{machine} mode.\\
+
+\noindent \framebox{hart's x mtimecmp register 64 bits @ base + 0x4000 + 8 * x }\\
+\noindent \framebox{mtime register 64 bits @ base + 0xbff8 }
+
+
+\section{Platform Local Interrupt Controller (PLIC)}
+\subsection{Internals}
+
+
+The PLIC makes a communication link from \textbf{external devices} to the \textbf{microprocessor}. 
+
+\subsubsection for the hart{Interrupt Gateways}
+The interrupt gateways are responsible for converting global interrupt signals into a common interrupt request format, and for controlling the flow of interrupt requests to the \textbf{PLIC core}.
+
+External devices are connected to the \textbf{Gateway} through an \textbf{irq} line to send interrupt signals (either level trigger or edge trigger). 
+
+Each source has an \textbf{Interrupt Identifier}. Interrupt indentifier 0 is reserved (so, it starts from 1).
+
+% number of ID
+
+The gateway only forwards a new interrupt request to the PLIC core after receiving notification that the interrupt handler servicing the previous interrupt request from the same source has completed (or if it is the very first interrupt from the source).
+
+At most one interrupt request per interrupt source can be pending in the PLIC core at any time, indicated for the PLIC core by setting the \textbf{source’s IP bit}.
+
+% number of sources
+
+\subsubsection{Interrupt priority}
+
+Each interrupt source has a priority, which is a 32 bits integer.
+A priority equals to 0 means "never interrupt" and  interrupt priority increases with increasing integer values. The priority is stored in a memory-mapped register.\\
+
+\noindent \framebox{interrupt source x priority: 32 bits @ base + 4 * x}
+
+\subsubsection{Interrupt targets}
+
+An interrupt target is a given privilege mode on a given hart.
+For instance, machine mode on hart 1, Supervisor mode on hart 1 \dots{}
+
+% number of targets
+
+\subsubsection{Interrupt enable}
+
+Each target can enable interrupts comming from every sources by setting a 1 in the target's \textbf{enable regsiter}.
+
+The PLIC will mask the interrupts from sources not enabled by the target.\\
+
+\noindent \framebox{enbale bits for source x on target y: bit x \% 8 @ base + 0x2000 + 0x80 * y + x / 8}
+
+
+\subsubsection{Interrupt threshold}
+
+Each target sets a threshold by writting the target's \textbf{threshold register}.
+The PLIC core will mask interrupts whose priority is not greater than the target's threshold.\\
+
+\noindent \framebox{target x threshold: 32 bits @ base + 0x2000 + 0x1000 * x}
+
+
+\subsubsection{Interrupt notification}
+
+Each target has a \textbf{EIP bit} in the PLIC core thats indicates that the corresponding target has an interrupt pending. The EIP bit will be reflected in the hart's \textbf{interrupt pending register}.
+
+In order to have the EIP bit in the PLIC core set for a target, it requires:
+
+\begin{itemize}
+	\item  an interrupt request has been sent to the PLIC core by the Gateway
+	\item the interrupt's source is enabled for the target
+	\item the interrupt's priority is greater than the target's threshold
+\end{itemize}
+
+\subsubsection{Interrupt claim process}
+
+Once a target has been notified about an interrupt (interrupt pending register), the target must \textbf{claim} the PLIC to service the interrupt. The \textbf{claim} action corresponds to reading the target's \textbf{claim/complete register} in order to get the \textbf{Interruption Indentifier} responsible of the interrupt.
+
+On receiving a claim, the PLIC will determine the ID if the highest priority pending interrupt for the target. 0 will be returned in case there is no pending interrupt. This case can happen if several targets have been notified for an interrupt and one of them has already claimed the interrupt.
+
+On receiving a claim, the PLIC will clear the \textbf{source's IP bit} partially responsible for setting the \textbf{EIP} bit of the target. In fact, other source's IP bits can still set the target's EIP bit to 1. It is designed like that so that the target can claim multiple interrupts in one shot until the interrupt pending register is 0 (prevent many context switches). Indeed, claiming can be done at any time.\\
+
+\noindent \framebox{target x claim/complete register : 32 bits @ base + 0x2000 + 0x1000 * x + 0x4}
+
+\subsubsection{Interrupt complete}
+
+Once the target has completed the interrupt, it must \textbf{complete} the interrupt to the PLIC, so that the PLIC will forward the complete message to the Gateway which in turn would be able to forward new interrupt requests.
+
+Completing consists in writting the \textbf{interrupt indentifier} to the \textbf{claim/complete register}.\\
+
+\noindent \framebox{target x claim/complete register : 32 bits @ base + 0x2000 + 0x1000 * x + 0x4}
+
+\subsection{Configuration}
+
+In order to configure the PLIC, we need to:
+
+\begin{itemize}
+\item think about sources
+\item think about targets
+\item set sources' priority
+\item set targets' thrshold
+\item enable sources for targets
+\end{itemize}
+
+\noindent In order to handle the external interrupt, we need to:
+
+\begin{itemize}
+\item claim
+\item if ID == 0 :
+	\begin{itemize}
+	\item do nothing
+	\end{itemize}
+\item else :
+	\begin{itemize}
+	\item do some stuff related to ID
+	\end{itemize}
+\item complete
+\end{itemize}
+
+\subsection{Sources}
+
+\begin{itemize}
+\item \href{https://github.com/riscv/riscv-plic-spec/blob/master/riscv-plic.adoc#interrupt-notification}{https://github.com/riscv/riscv-plic-spec/blob/master/riscv-plic.adoc\#interrupt-notifications}
+\end{itemize}
+
+\section{Traps}
+
+Traps indicate exception (raised by executing an instruction) and interruptions (raised by another module).
+
+An exception will be automatically taken by the corresponding mode (indicated by Xedelg register), if trap are enabled in mode X.
+
+An interrupt will be serviced by mode x if:
+\begin{itemize}
+\item the interrupt has been delegated to mode x
+\item interrupt bit is set in xip
+\item interrupt is enabled in xie
+\item interrupts are enabled globally. It is the case if ie bit is set in xstatus register or if the current privilege mode is lower than x.
+\end{itemize}
+
+\subsubsection{Trap flow}
+
+Whenever a trap occurs in mode Y and is handled in mode X (and X enabled traps), the following actions happen:
+\begin{itemize}
+\item Xepc <- pc
+\item Xstatus.ie <- 0
+\item Xstatus.XPP <- Y
+\item Xcause <- ...
+\item Xtval <- ... 
+\item pc <- Xtvec
+\item new mode is X
+\end{itemize}
+
+\end{document}

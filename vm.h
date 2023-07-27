@@ -1,5 +1,4 @@
-#include "memlayout.h"
-#include "riscv.h"
+#include "types.h"
 void kvminit();
 void kvminithart();
 void mappages(t_pagetable, void*, uint64, void*, uint64);

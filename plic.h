@@ -1,4 +1,4 @@
-#include "riscv.h"
+#include "types.h"
 
 void plicinit();
 void plicinithart();

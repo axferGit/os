@@ -1,21 +1,20 @@
 OBJS = entry.o \
 	start.o \
 	main.o \
-	machine_trap.o \
 	plic.o \
 	uart.o \
 	alloc.o \
-	riscv.o \
 	printf.o \
 	kernelvec.o \
 	vm.o \
 	proc.o \
 	trap.o \
+	ssys.o \
 	trampoline.o \
 	userproc.o
 	
 
-CONSTANT = memlayout.h
+CONSTANT = memlayout.h riscv.h
 CORES = 1
 
 TOOLPREFIX = riscv64-linux-gnu-
@@ -32,7 +31,7 @@ QEMUOPTS = -machine virt -cpu rv64 -smp $(CORES) -m 128M -nographic -bios none -
 .PHONY : gdb clear
 
 
-kernel: $(OBJS) t.ld 
+kernel: $(OBJS) t.ld riscv.h
 	$(LD) -T t.ld -o kernel $(OBJS) 
 	$(OBJDUMP) -d -S kernel > kernel.asm
 	$(OBJDUMP) -t kernel | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > kernel.sym
