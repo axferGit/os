@@ -39,7 +39,7 @@ void procinit(){
         
         // kernel
         proc -> trapframe -> k_pt = (uint64) MAKE_SATP(kernel_pagetable);
-        proc -> trapframe -> k_trap = (uint64) &straphandler;
+        proc -> trapframe -> k_trap = (uint64) &usertrap;
 
         void* k_stack;
         if ((k_stack = alloc()) == 0){

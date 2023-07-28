@@ -30,7 +30,7 @@ void main(){
     printf("[OK] kvminihart\n");
     procinit();
     printf("[OK] procinit\n");
-        
+    
     proclaunch();
 
 

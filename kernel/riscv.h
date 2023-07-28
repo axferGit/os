@@ -58,6 +58,12 @@ static inline uint64 r_mcause(){
     return x;
 }
 
+static inline uint64 r_scause(){
+    uint64 x = 0;
+    asm volatile("csrr %0, scause" : "+r" (x));
+    return x;
+}
+
 static inline void s_mideleg(uint64 x){
     asm volatile("csrs mideleg, %0" : : "r"(x));
     return;
@@ -76,6 +82,17 @@ static inline uint64 r_mepc(){
 
 static inline void w_mepc(uint64 x){
     asm volatile("csrw mepc, %0": : "r" (x));
+    return;
+}
+
+static inline uint64 r_sepc(){
+    uint64 x = 0;
+    asm volatile("csrr %0, sepc" : "+r"(x));
+    return x;
+}
+
+static inline void w_sepc(uint64 x){
+    asm volatile("csrw sepc, %0": : "r" (x));
     return;
 }
 
@@ -128,10 +145,5 @@ static inline void w_sscratch(uint64 x){
 
 static inline void s_sstatus(uint64 x){
     asm volatile("csrs sstatus, %0" : : "r"(x));
-    return;
-}
-
-static inline void w_sepc(uint64 x){
-    asm volatile("csrw sepc, %0" : : "r" (x));
     return;
 }

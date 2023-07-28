@@ -5,8 +5,15 @@
 #include "printf.h"
 #include "vm.h"
 #include "proc.h"
+#include "ssys.h"
+#include "trap.h"
+#include "uart.h"
 
-extern void mtrapvecret();
+extern void uservecret(uint64,uint64);
+extern void uservec();
+extern char* trampoline;
+extern struct cpu cpu_list[NHART];
+
 extern struct trapframe mscratch[NHART];
 
 char* cause_interrupt[] = {
@@ -38,8 +45,16 @@ char* cause_exception[] = {
     [15] "Store/Amo page fault"
 };
 
+char* ssys[] = {
+    [1] "S_SYSCALL_HARTID"
+};
+
+char* usys[] = {
+    [1] "U_SYSCALL_TEST"
+};
+
 void mtraphandler(){
-    printf("Machine trap!\n");
+    //printf("\n##### MACHINE TRAP HANDLER #####\n");
 
     uint64 mcause = r_mcause();
     uint64 cause = mcause & 0x7fffffffffffffffL;
@@ -63,15 +78,19 @@ void mtraphandler(){
     else {
         switch (cause){
             case ENVIRONMENT_CALL_FROM_S_MODE:
-                printf("%s\n",cause_exception[cause]);
-                w_mepc(r_mepc() + 4);
-                if (mscratch[r_mhartid()].a7 == 1){
-                    mscratch[r_mhartid()].a0 = r_mhartid();
+                //printf("%s\n",cause_exception[cause]);
+                switch (mscratch[r_mhartid()].a7) {
+                    case S_SYSCALL_HARTID:
+                        w_mepc(r_mepc() + 4);
+                        mscratch[r_mhartid()].a0 = r_mhartid();
+                        //printf("%s\n",ssys[S_SYSCALL_HARTID]);
+                        break;
+                    
+                    default:
+                        panic("bad S_SYSCALL value\n");
+                        break;
                 }
-                else{
-                    panic("bad S_SYSCALL value\n");
-                }
-                break;
+            break;
 
             default:
                 printf("Exception (%p) not handled in machine mode !\n",cause);
@@ -82,11 +101,60 @@ void mtraphandler(){
                 break;
         }
     }
+    //printf("##########\n");
     return; 
 }
 
-void straphandler(){
-    printf("\ntrap S mode\n");
-   printf("ok trap\n");
+void usertrap(){
+    //printf("\n##### USERTRAP #####\n");
+    uint64 id = hartid();
+    uint64 scause = r_scause();
+    uint64 cause = scause & 0x7fffffffffffffffL;
+
+    // Interrupts
+    if(scause >> 63){
+        printf("Interruptions not handled in supervisor mode\n");
+        panic("");
+    }
+    // Exceptions
+    else{
+        switch (cause)
+        {
+        case ENVIRONMENT_CALL_FROM_U_MODE:
+            //printf("%s\n",cause_exception[cause]);
+            //match nulber of syscall stored in a7
+            switch(cpu_list[id].proc -> trapframe -> a7){
+                case(U_SYSCALL_TEST):
+                    //printf("%s\n",usys[U_SYSCALL_TEST]);
+                    w_sepc(r_sepc() + 4);
+                    //printf(">>>>>>>>>>>>>>>> ");
+                    uartputc((char) (cpu_list[id].proc -> trapframe -> a0));
+                    //printf("%p",cpu_list[id].proc -> trapframe -> a0);
+                    //printf(" <<<<<<<<<<<<<<<<\n");
+                    break;
+                
+                default:
+                    panic("Bad U_SYSCALL\n");
+                    break;
+            }
+            break;
+        
+        default:
+            printf("Interruption not handled in supervisor mode\n");
+            panic("");
+            break;
+        }
+    }
+    
+    //printf("##########\n");
+    usertrapret();
     return;
 }
+
+// jump to uservecret (trampline.S) with right arguments
+void usertrapret(){
+    uint64 fn = (TRAMPOLINE + ((uint64) &uservecret - (uint64) &trampoline));
+    ((void (*) (uint64,uint64)) fn) (TRAPFRAME, (uint64) MAKE_SATP(cpu_list[hartid()].proc->pt));
+    return;
+}
+

@@ -5,13 +5,17 @@
 #include "vm.h"
 #include "proc.h"
 #include "trap.h"
+#include "ssys.h"
 
 extern char* edata;
 extern void uservecret(uint64,uint64);
 extern void uservec();
 extern char* trampoline;
 extern t_pagetable kernel_pagetable;
+
 struct proc proc_list[NPROC];
+struct cpu cpu_list[NHART];
+
 
 void procinit(){
     int i;
@@ -20,7 +24,7 @@ void procinit(){
         proc = &proc_list[i];
         
         // pagetable
-        if ((proc->pt = alloc()) == 0){
+        if ((proc -> pt = alloc()) == 0){
             panic("Proc pt alloc failed\n");
         }
         
@@ -35,24 +39,24 @@ void procinit(){
         
         // kernel
         proc -> trapframe -> k_pt = (uint64) MAKE_SATP(kernel_pagetable);
-        proc->trapframe->k_trap = (uint64) &traphandler;
+        proc -> trapframe -> k_trap = (uint64) &straphandler;
 
         void* k_stack;
         if ((k_stack = alloc()) == 0){
             panic("Fail to alloc k_stack\n");
         }
-        mappages(kernel_pagetable,(void*) TRAPFRAME - (2*i +1)* PAGESIZE, PAGESIZE, k_stack, PTE_R | PTE_W);
-        mappages(kernel_pagetable,(void*) TRAPFRAME - (2*i +2)* PAGESIZE, PAGESIZE, 0x0, 0x0);
+        mappages(kernel_pagetable,(void*) TRAPFRAME - (2*(i+1) - 1) * PAGESIZE, PAGESIZE, k_stack, PTE_R | PTE_W);
+        mappages(kernel_pagetable,(void*) TRAPFRAME - (2*(i+1)) * PAGESIZE, PAGESIZE, 0x0, 0x0);
         
-        proc->trapframe->k_sp = TRAPFRAME - (2*i +1)* PAGESIZE + PAGESIZE -1;
+        proc -> trapframe -> k_sp = TRAPFRAME - (2*(i+1) -1)* PAGESIZE + PAGESIZE -1;
         
 
         // stack
         if((proc -> stack = alloc()) == 0){
-            panic("Proc pstack alloc failed\n");
+            panic("Proc stack alloc failed\n");
         }
-        proc -> trapframe -> sp = (uint64) STACK + PAGESIZE - 1 ;
-        mappages(proc -> pt,(void*) STACK, PAGESIZE, proc -> stack, PTE_U | PTE_X | PTE_R | PTE_W);
+        proc -> trapframe -> sp = ((uint64) STACK) + PAGESIZE - 1 ;
+        mappages(proc -> pt,(void*) STACK, PAGESIZE, proc -> stack, PTE_U | PTE_R | PTE_W);
 
         // UART
         mappages(proc -> pt, (void*) UART0, PAGESIZE, (void*) UART0, PTE_U | PTE_R | PTE_W);
@@ -67,6 +71,9 @@ void procinit(){
 void proclaunch(){
     struct proc proc = proc_list[0];
     
+    cpu_list[hartid()].proc = &proc_list[0];
+
+
     w_sepc((uint64) 0x0);
     s_sstatus(((uint64) USER) << SPP);
     w_stvec((uint64)(TRAMPOLINE + ((uint64) &uservec - (uint64) &trampoline)));

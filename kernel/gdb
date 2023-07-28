@@ -3,5 +3,7 @@ layout split
 layout regs
 focus cmd
 #Comments
-#ecall
-b * 0x80001610
+#usertrap
+b * 0x80001656
+# mtraphandler
+b* 0x80001458

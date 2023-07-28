@@ -53,7 +53,7 @@ void mtraphandler(){
                 break;
             
             default:
-                printf("Reserved (%p)\n",cause);
+                printf("Interrupt (%p) not handled in machine mode !\n",cause);
                 panic("");
                 break;
         }
@@ -62,128 +62,31 @@ void mtraphandler(){
     // Exception
     else {
         switch (cause){
-
-        case ENVIRONMENT_CALL_FROM_S_MODE:
-            printf("%s\n",cause_exception[cause]);
-            printf("mepc  : %p\n",r_mepc());
-            w_mepc(r_mepc() + 4);
-            if (mscratch[r_mhartid()].a7 == 1){
-                mscratch[r_mhartid()].a0 = r_mhartid();
-            }
-            else{
-                panic("bad S_SYSCALL value\n");
-            }
-            break;
-
-        default:
-            if(cause < (sizeof(cause_exception)/8)){
+            case ENVIRONMENT_CALL_FROM_S_MODE:
                 printf("%s\n",cause_exception[cause]);
-            }
-            else{
-                printf("Reserved (%p)\n",cause);
-            }
+                w_mepc(r_mepc() + 4);
+                if (mscratch[r_mhartid()].a7 == 1){
+                    mscratch[r_mhartid()].a0 = r_mhartid();
+                }
+                else{
+                    panic("bad S_SYSCALL value\n");
+                }
+                break;
 
-            printf("mepc : %p\nmtval : %p\n",r_mepc(),r_mtval());
-
-            panic("");
-            break;
+            default:
+                printf("Exception (%p) not handled in machine mode !\n",cause);
+                printf("mepc  : %p\n",r_mepc());
+                printf("mtval : %p\n",r_mtval());
+                printf("satp  : %p\n",r_satp());
+                panic("");
+                break;
         }
     }
-    return mtrapvecret(); 
+    return; 
 }
 
-void traphandler(){
-    panic("\ntrap S mode\n");
+void straphandler(){
+    printf("\ntrap S mode\n");
+    printf("ok trap\n");
     return;
 }
-
-// {
-//     printf("Machine trap!\n");
-
-//     uint64 mcause = r_mcause();
-//     uint64 cause = mcause & 0x7fffffffffffffffL;
-
-//     // Interrupt
-//     if (mcause >> 63){
-//         switch (cause){
-
-//             case MEI:
-//                 // Claim the device which triggered the interrupt
-//                 uint32 id = plicclaim();
-                
-//                 // UART interrupts
-//                 if (id == UART0_IRQ){
-//                     printf("UART0_IRQ\n");
-//                     int c = uartgetc();
-//                     if (c != -1){
-//                         uartputc(c);
-//                     }                
-//                 }
-
-//                 // Complete the interrupt
-//                 pliccomplete(id);
-
-//                 break;
-
-//             case MTI:
-//                 printf("%s\n",cause_interrupt[cause]);
-//                 //int cpu_id = cpuid();
-//                 uint64 cpu_id = 0;
-//                 *((uint64*) CLINT_MTIMECMP(cpu_id)) = (TIME + TIMER_INTERVAL);
-//                 break;
-            
-//             default:
-//                 printf("Reserved (%p)\n",cause);
-//                 panic("");
-//                 break;
-//         }
-//     }
-
-//     // Exception
-//     else {
-//         switch (cause){
-
-//         case ENVIRONMENT_CALL_FROM_S_MODE:
-//             printf("%s\n",cause_exception[cause]);
-//             printf("mepc  : %p\n",r_mepc());
-//             w_mepc(r_mepc() + 4);
-//             if (mscratch[r_mhartid()].a7 == 1){
-//                 mscratch[r_mhartid()].a0 = r_mhartid();
-//             }
-//             else{
-//                 panic("bad S_SYSCALL value\n");
-//             }
-//             break;
-
-//         case LOAD_PAGE_FAULT:
-//             printf("%s\n",cause_exception[cause]);
-//             printf("mepc  : %p\n",r_mepc());
-//             printf("mtval : %p\n",r_mtval());
-//             printf("satp  : %p\n",r_satp());
-//             panic("");
-//             break;
-
-//         case INSTRUCTION_PAGE_FAULT:
-//             printf("%s\n",cause_exception[cause]);
-//             printf("mepc  : %p\n",r_mepc());
-//             printf("mtval : %p\n",r_mtval());
-//             printf("satp  : %p\n",r_satp());
-//             panic("");
-//             break;
-
-//         default:
-//             if(cause < (sizeof(cause_exception)/8)){
-//                 printf("%s\n",cause_exception[cause]);
-//             }
-//             else{
-//                 printf("Reserved (%p)\n",cause);
-//             }
-
-//             printf("mepc : %p\nmtval : %p\n",r_mepc(),r_mtval());
-
-//             panic("");
-//             break;
-//         }
-//     }
-//     return mtrapvecret(); 
-// }

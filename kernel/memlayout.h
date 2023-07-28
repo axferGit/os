@@ -95,5 +95,9 @@
 #define TIME (*((uint64*) (CLINT_MTIME)))
 #define TIMER_INTERVAL 30000000UL
 
-// SYSCALL
+// SSYSCALL
 #define S_SYSCALL_HARTID (1)
+
+// USYSCALL
+#define U_SYSCALL_TEST (1)
+

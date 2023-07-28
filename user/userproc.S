@@ -2,20 +2,31 @@
 .global f
 .global print_user
 
-f :
+# f :
+#     lui a0, 0x10000
+#     li a1, 0x61
+#     sb a1, 0(a0)
+#     li a1, 0x0a #new line
+#     sb a1, 0(a0)
+#     li a7, 7
+#     li a0, 0x61
+#     ecall
+#     j f
+
+f:
     lui a0, 0x10000
     li a1, 0x61
     sb a1, 0(a0)
     li a1, 0x0a #new line
     sb a1, 0(a0)
-    li a7, 7
     li a0, 0x61
-    ecall
-    j f
+f2:
+    call print_user
+    addi a0, a0, 1
+    j f2
 
-# f:
-#     li a0, 0x61
-#     ecall print_user
-#     addi a0, a0, 1
-#     j f
-    
+print_user:
+    li a7, 1
+    ecall
+    ret
+

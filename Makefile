@@ -14,6 +14,7 @@ OBJS = ${K}/entry.o \
 	${K}/trap.o \
 	${K}/ssys.o \
 	${K}/trampoline.o \
+	${U}/userproc.o 
 	
 
 CONSTANT = ${K}/memlayout.h ${K}/riscv.h ${K}/types.h
@@ -33,7 +34,7 @@ QEMUOPTS = -machine virt -cpu rv64 -smp $(CORES) -m 128M -nographic -bios none -
 .PHONY : gdb clear
 
 
-kernel: $(OBJS) ${K}/t.ld ${K}/riscv.h
+${K}/kernel: $(OBJS) ${K}/t.ld ${K}/riscv.h
 	$(LD) -T ${K}/t.ld -o ${K}/kernel $(OBJS) 
 	$(OBJDUMP) -d -S ${K}/kernel > ${K}/kernel.asm
 	$(OBJDUMP) -t ${K}/kernel | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > ${K}/kernel.sym
@@ -55,4 +56,4 @@ gdb :
 
 clear :
 	rm ${OBJS}
-	rm ${K}/kernel ${K}/kernel.asm
+	rm ${K}/kernel ${K}/kernel.asm ${K}/kernel.sym
