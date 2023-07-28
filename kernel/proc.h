@@ -1,0 +1,2 @@
+void procinit();
+void proclaunch();

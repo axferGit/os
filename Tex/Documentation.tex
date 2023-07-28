@@ -20,9 +20,71 @@ So, the kernel code should be loaded at KERNBASE (0x80000000). As Qemu loads the
 \subsection{entry.S}
 
 entry.S is loaded at PHYBASE (0x80000000).
-The code aims at providing each core with a stack and then calling the kernel code.
+The code aims at providing each core with a stack and then calling the kernel code (\textbf{start.c}).
 
 The stacks are defined in the C code as global arrays.
+
+\subsection{start.c}
+
+\textbf{start.c} is called by \textbf{entry.S}. This is the very first piece of kernel code which is executed. 
+
+The code is executed is \textbf{machine mode} as the microprocessor starts is machine mode.
+
+This code aims at configuring the microprocessor before passing the baton to the supervisor mode.
+
+The following tasks are done:
+\begin{itemize}
+\item machine trap configuration : interrupt/exception delegation, interrupt enabling, machine trap vector
+\item physical memory protection
+\item preparing return the supervisor mode \label{aa}
+\end{itemize}
+
+Then, the kernel code runs and configures the kernel's services in \textbf{main.c}.
+
+\subsection{main.c}
+
+\textbf{main.c} calls the configuration function of all kernel's services, namely:
+\begin{itemize}
+\item UART
+\item CLINT (timer interrupts)
+\item PLIC (external interrupts)
+\item page allocation
+\item virtual memory
+\item processes
+\item supervisor trap (in kernel mode)
+\end{itemize}
+
+Some of these services need to be configured only once. So, this is only done by \textbf{hart 0}.
+
+\subsection{alloc.c}
+
+\textbf{alloc.c} gathers all the code related to the page allocation, namely:
+\begin{itemize}
+\item \textit{uint64* hd\_{}pagelist}: linked list of free pages. Each page in the free page list stores the adress of the next free page in its 8 first bytes of the page. 
+\item \textit{void allocinit()}: divides the unused DRAM memory into chunks of \textit{PAGESIZE}
+\item \textit{void* alloc()}: removes a free page from the page list and returns it
+\item \textit{void free(void* p)}: resets the page p to 0 and appends it at the begining of the free page list 
+\end{itemize}
+
+\subsection{vm.c}
+
+\textbf{vm.c} gathers all the code related to the virtual memory management, namely:
+
+\begin{itemize}
+\item \textit{t\_{}pagetable kernel\_{}pagetable}: kernel's page table
+\item \textit{mvoid mappages(t\_{}pagetable kernel\_{}pagetable, void* va, uint64 sz, void* pa, uint64 perm)}: maps  pages starting from virtual address \textit{va} until \textit{va + sz} to physical pages starting from physical address \textit{pa} with permission \textit{perm}
+\item \textit{void kmvinit()}: creates the kernel page table
+\item \textit{void kvminihart()}: loads the kernel's page table in satp register
+\end{itemize}
+
+\subsection{proc.c}
+
+\textbf{proc.c} gathers all code related to processes, namely:
+\begin{itemize}
+\item \textit{void procinit()}: creates for each process its pagetable.
+\item \textit{void proclaunch()}: runs the process on the hart
+\end{itemize}
+
 
 \section{Core Local Interruptor (CLINT)}
 
@@ -166,7 +228,7 @@ An interrupt will be serviced by mode x if:
 \item interrupts are enabled globally. It is the case if ie bit is set in xstatus register or if the current privilege mode is lower than x.
 \end{itemize}
 
-\subsubsection{Trap flow}
+\subsection{Trap flow}
 
 Whenever a trap occurs in mode Y and is handled in mode X (and X enabled traps), the following actions happen:
 \begin{itemize}
@@ -178,5 +240,29 @@ Whenever a trap occurs in mode Y and is handled in mode X (and X enabled traps),
 \item pc <- Xtvec
 \item new mode is X
 \end{itemize}
+
+\subsection{Machine trap}
+
+\textbf{mtvec} points to \textbf{mtrapvec} in \textbf{kernelvec.S}.
+
+matrpvec saves all registers to per hart save area and loads the stack pointer with a per hart stack dedicated for trap handling, and finally jumps to \textbf{mtraphandler}.
+
+\textbf{mtraphandler} handles the trap and passes the baton to \textbf{mtrapvecret}.
+
+\textbf{mtrapvecret} does exactly the contrary of \textbf{mtrapvec}, namely, loading all saved registers.\\
+
+As there is only one save area per hart, it is mandatory that the trap handling in machine mode can not be interrupted again (otherwise the regsiters would be overwritten).
+
+A machine trap is usefull during kernel development as it enables to catch all interrupts from kernel mode easily (no satp).
+
+\subsection{Trap from user mode}
+
+\textbf{trampoline.S} gathers the code for switching context between user mode and supervisor mode. It contains 2 functions, namely:
+\begin{itemize}
+\item \textit{uservec}: saves all registers in the \textit{trapframe}, whose address is stored in \textit{sscrtach}, and the loads registers for supervisor mode, and finally changes the \textit{pagetable} to that of kernel.
+\item \textit{uservecret}: does the countrary of \textit{uservec}.
+\end{itemize}
+
+The code in \textbf{trampoline.S} needs to be located at the same address in both user and kernel pagetable, as when we switch pagetables, the program counter points to the next instruction.
 
 \end{document}

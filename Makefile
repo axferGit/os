@@ -1,20 +1,22 @@
-OBJS = entry.o \
-	start.o \
-	main.o \
-	plic.o \
-	uart.o \
-	alloc.o \
-	printf.o \
-	kernelvec.o \
-	vm.o \
-	proc.o \
-	trap.o \
-	ssys.o \
-	trampoline.o \
-	userproc.o
+K = kernel
+U = user
+
+OBJS = ${K}/entry.o \
+	${K}/start.o \
+	${K}/main.o \
+	${K}/plic.o \
+	${K}/uart.o \
+	${K}/alloc.o \
+	${K}/printf.o \
+	${K}/kernelvec.o \
+	${K}/vm.o \
+	${K}/proc.o \
+	${K}/trap.o \
+	${K}/ssys.o \
+	${K}/trampoline.o \
 	
 
-CONSTANT = memlayout.h riscv.h
+CONSTANT = ${K}/memlayout.h ${K}/riscv.h ${K}/types.h
 CORES = 1
 
 TOOLPREFIX = riscv64-linux-gnu-
@@ -26,24 +28,24 @@ QEMU = qemu-system-riscv64
 GDB = gdb-multiarch
 
 CFLAGS = ggdb -ffreestanding -fno-common -nostdlib -fno-stack-protector
-QEMUOPTS = -machine virt -cpu rv64 -smp $(CORES) -m 128M -nographic -bios none -kernel kernel 
+QEMUOPTS = -machine virt -cpu rv64 -smp $(CORES) -m 128M -nographic -bios none -kernel ${K}/kernel 
 
 .PHONY : gdb clear
 
 
-kernel: $(OBJS) t.ld riscv.h
-	$(LD) -T t.ld -o kernel $(OBJS) 
-	$(OBJDUMP) -d -S kernel > kernel.asm
-	$(OBJDUMP) -t kernel | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > kernel.sym
+kernel: $(OBJS) ${K}/t.ld ${K}/riscv.h
+	$(LD) -T ${K}/t.ld -o ${K}/kernel $(OBJS) 
+	$(OBJDUMP) -d -S ${K}/kernel > ${K}/kernel.asm
+	$(OBJDUMP) -t ${K}/kernel | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > ${K}/kernel.sym
 
-qemu : kernel
+qemu : ${K}/kernel
 	${QEMU} ${QEMUOPTS}
 
-qemu-gdb : kernel
-	${QEMU} -machine virt -cpu rv64 -smp $(CORES) -s -S -nographic -bios none -kernel kernel
+qemu-gdb : ${K}/kernel
+	${QEMU} -machine virt -cpu rv64 -smp $(CORES) -s -S -nographic -bios none -kernel ${K}/kernel
 
 gdb :
-	${GDB} --command=./gdb
+	${GDB} --command=./${K}/gdb
 
 %.o : %.c ${CONSTANT}
 	${CC} -${CFLAGS} -c $< -o $@
@@ -53,4 +55,4 @@ gdb :
 
 clear :
 	rm ${OBJS}
-	rm kernel kernel.asm
+	rm ${K}/kernel ${K}/kernel.asm
