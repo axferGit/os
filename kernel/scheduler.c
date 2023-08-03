@@ -5,9 +5,8 @@
 #include "swtch.h"
 #include "printf.h"
 
-extern struct proc proc_list[NPROC];
-extern struct cpu cpu_list[NHART];
-
+// run next RUNNABLE process on hart
+// never return, keep looping !
 void scheduler(){
     uint64 id = hartid();
     struct proc * p;

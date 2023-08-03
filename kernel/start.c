@@ -3,12 +3,12 @@
 #include "riscv.h"
 #include "main.h"
 #include "proc.h"
+#include "kernelvec.h"
 
 __attribute__ ((aligned (16))) char stack0[4096 * NHART]; // initial stack, one per hart
 __attribute__ ((aligned (16))) struct trapframe mscratch[NHART]; // mscratch area for machine interrupt handler, one per hart
 __attribute__ ((aligned (16))) uint64 Mstack0[4096 * NHART]; // Machine stack for machine interrupts, one per hart
 
-extern void mtrapvec();
 
 static inline void timerinit(){
     *((uint64*) CLINT_MTIMECMP(r_mhartid())) = TIME + TIMER_INTERVAL;
@@ -51,8 +51,6 @@ static inline void pmpinit(){
     w_pmpcfg0(0xf);
     return;
 }
-
-
 
 void start(){
     timerinit();
