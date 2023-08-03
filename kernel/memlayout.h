@@ -30,7 +30,7 @@
 #define PTE2PAGE(pte) ((((pte) >> (PTE_CFG_BITS)) & MASK_PAGE) * PAGESIZE)
 
 // PROCESS
-#define NPROC 1
+#define NPROC 3
 
 // UART
 #define UART0 0x10000000UL

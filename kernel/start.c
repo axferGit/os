@@ -17,12 +17,14 @@ static inline void timerinit(){
 // Enable interrupts
 static inline void ieinit(){
     s_mie(1 << MTI);
+    s_sie(1 << SSI);
     return;
 }
 // Delegate traps (interrupts and exceptions) to corresponding modes
 static inline void trapdelegateinit(){
     //s_mideleg(1 << SSI | 1 << STI | 1 << SEI);
     s_medeleg(1 << ENVIRONMENT_CALL_FROM_U_MODE);
+    s_mideleg(1 << SSI);
     return;
 }
 
@@ -36,7 +38,7 @@ static inline void mtvecinit(){
 }
 
 static inline void mret(){
-    s_mstatus(1UL << SPIE | SUPERVISOR << MPP);
+    s_mstatus(0UL << SPIE | SUPERVISOR << MPP);
     w_mepc((uint64)&main);
     w_satp((uint64) 0);
     asm volatile("mret");

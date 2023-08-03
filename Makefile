@@ -14,6 +14,8 @@ OBJS = ${K}/entry.o \
 	${K}/trap.o \
 	${K}/ssys.o \
 	${K}/trampoline.o \
+	${K}/swtch.o \
+	${K}/scheduler.o \
 	${U}/userproc.o 
 	
 
@@ -28,7 +30,8 @@ OBJDUMP = $(TOOLPREFIX)objdump
 QEMU = qemu-system-riscv64
 GDB = gdb-multiarch
 
-CFLAGS = ggdb -ffreestanding -fno-common -nostdlib -fno-stack-protector
+CFLAGS = ggdb -ffreestanding -fno-common -nostdlib -fno-stack-protector -O
+
 QEMUOPTS = -machine virt -cpu rv64 -smp $(CORES) -m 128M -nographic -bios none -kernel ${K}/kernel 
 
 .PHONY : gdb clear

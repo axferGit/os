@@ -8,6 +8,8 @@
 #include "ssys.h"
 #include "trap.h"
 #include "uart.h"
+#include "swtch.h"
+
 
 extern void uservecret(uint64,uint64);
 extern void uservec();
@@ -64,6 +66,7 @@ void mtraphandler(){
         switch (cause){
             case MTI:
                 printf("%s\n",cause_interrupt[cause]);
+                s_mip(1 << SSI);
                 *((uint64*) CLINT_MTIMECMP(r_mhartid())) = (TIME + TIMER_INTERVAL);
                 break;
             
@@ -111,41 +114,64 @@ void usertrap(){
     uint64 scause = r_scause();
     uint64 cause = scause & 0x7fffffffffffffffL;
 
+    struct proc * proc = cpu_list[id].proc;
+
     // Interrupts
     if(scause >> 63){
-        printf("Interruptions not handled in supervisor mode\n");
-        panic("");
+        switch (cause) {
+            case (SSI):
+                printf("SSI\n");
+                c_sip(1 << SSI); // clear SIP
+                
+                proc -> trapframe -> pc = r_sepc(); // save sepc because the context will change
+
+                proc ->state = RUNNABLE;
+
+                // switch to scheduler (on main thread)
+                swtch(&(proc->context), &(cpu_list[id].context));
+                // resume from scheduler (on main thread)
+
+                break;
+            
+            default:
+                printf("Interruptions not handled in supervisor mode\n");
+                printf("cause : %p\n",cause);
+                panic("");
+                break;
+      }     
     }
+
     // Exceptions
     else{
         switch (cause)
         {
-        case ENVIRONMENT_CALL_FROM_U_MODE:
-            //printf("%s\n",cause_exception[cause]);
-            //match nulber of syscall stored in a7
-            switch(cpu_list[id].proc -> trapframe -> a7){
-                case(U_SYSCALL_TEST):
-                    //printf("%s\n",usys[U_SYSCALL_TEST]);
-                    w_sepc(r_sepc() + 4);
-                    //printf(">>>>>>>>>>>>>>>> ");
-                    uartputc((char) (cpu_list[id].proc -> trapframe -> a0));
-                    //printf("%p",cpu_list[id].proc -> trapframe -> a0);
-                    //printf(" <<<<<<<<<<<<<<<<\n");
-                    break;
-                
-                default:
-                    panic("Bad U_SYSCALL\n");
-                    break;
-            }
-            break;
-        
-        default:
-            printf("Interruption not handled in supervisor mode\n");
-            panic("");
-            break;
+            case ENVIRONMENT_CALL_FROM_U_MODE:
+                //printf("%s\n",cause_exception[cause]);
+                //match nulber of syscall stored in a7
+                switch(cpu_list[id].proc -> trapframe -> a7){
+                    case(U_SYSCALL_TEST):
+                        //printf("%s\n",usys[U_SYSCALL_TEST]);
+                        w_sepc(r_sepc() + 4); // return to next instruction
+                        //printf(">>>>>>>>>>>>>>>> ");
+                        uartputc((char) (cpu_list[id].proc -> trapframe -> a0));
+                        //printf("%p",cpu_list[id].proc -> trapframe -> a0);
+                        //printf(" <<<<<<<<<<<<<<<<\n");
+                        break;
+                    
+                    default:
+                        panic("Bad U_SYSCALL\n");
+                        break;
+                }
+                break;
+            
+            default:
+                printf("Interruption not handled in supervisor mode\n");
+                panic("");
+                break;
         }
+        proc -> trapframe -> pc = r_sepc();
+
     }
-    
     //printf("##########\n");
     usertrapret();
     return;
@@ -153,6 +179,11 @@ void usertrap(){
 
 // jump to uservecret (trampline.S) with right arguments
 void usertrapret(){
+    uint64 id = hartid();
+    w_sepc(cpu_list[id].proc->trapframe->pc); //restore pc
+    s_sstatus(((uint64) USER) << SPP);
+    w_stvec((uint64)(TRAMPOLINE + ((uint64) &uservec - (uint64) &trampoline)));
+
     uint64 fn = (TRAMPOLINE + ((uint64) &uservecret - (uint64) &trampoline));
     ((void (*) (uint64,uint64)) fn) (TRAPFRAME, (uint64) MAKE_SATP(cpu_list[hartid()].proc->pt));
     return;

@@ -7,7 +7,7 @@ typedef unsigned char uint8;
 typedef uint64* t_pagetable;
 
 struct trapframe {
-    // microprocessor's registers
+    // saved process' registers
     /*   0 */ uint64 ra;
     /*   8 */ uint64 sp;
     /*  16 */ uint64 gp;
@@ -40,6 +40,7 @@ struct trapframe {
     /* 232 */ uint64 t5;
     /* 240 */ uint64 t6;
 
+    // process' epc
     /* 248 */ uint64 pc;
     
     /* 256 */ uint64 k_sp;
@@ -47,14 +48,40 @@ struct trapframe {
     /* 272 */ uint64 k_trap;
 };
 
+struct context {
+    /*   0 */ uint64 ra;
+    /*   8 */ uint64 sp;
+
+    /*  16 */ uint64 fp;
+    /*  24 */ uint64 s1;
+    /*  32 */ uint64 s2;
+    /*  40 */ uint64 s3;
+    /*  48 */ uint64 s4;
+    /*  56 */ uint64 s5;
+    /*  64 */ uint64 s6;
+    /*  72 */ uint64 s7;
+    /*  80 */ uint64 s8;
+    /*  88 */ uint64 s9;
+    /*  96 */ uint64 s10;
+    /* 104 */ uint64 s11;
+
+};
+
+enum state {RUNNABLE, RUNNING};
+
 struct proc {
+    uint64 pid;
+    enum state state;
     t_pagetable pt;
     char * stack;
     struct trapframe * trapframe;
+    struct context context;
 };
 
 struct cpu {
     struct proc* proc;
+    struct context context;
+
 };
 
 #endif

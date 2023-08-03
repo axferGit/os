@@ -22,6 +22,8 @@ void procinit(){
     for(i = 0 ; i < NPROC ; ++i){
         struct proc * proc;
         proc = &proc_list[i];
+
+        proc -> pid = i;
         
         // pagetable
         if ((proc -> pt = alloc()) == 0){
@@ -63,28 +65,30 @@ void procinit(){
 
         // text
         mappages(proc -> pt, (void*) 0x0, PAGESIZE, (void*) &edata, PTE_U | PTE_X | PTE_R | PTE_W);
-        
+
+        // context (called to launch the process)
+        proc -> context.sp = proc -> trapframe -> k_sp; // kernel sp
+        proc -> context.ra = (uint64) &usertrapret; // ra points to usertrapret
+        proc -> trapframe -> pc = 0;
+        proc -> state = RUNNABLE; 
+
     }
     return;      
 }
 
-void proclaunch(){
-    struct proc proc = proc_list[0];
+// void proclaunch(){
+//     struct proc proc = proc_list[0];
     
+//     w_sepc((uint64) 0x0);
+//     s_sstatus(((uint64) USER) << SPP);
+//     w_stvec((uint64)(TRAMPOLINE + ((uint64) &uservec - (uint64) &trampoline)));
     
-    cpu_list[hartid()].proc = &proc_list[0];
+//     printf("[OK] proclaunch\n");
+//     // printf("proc satp : %p\nmake satp : %p\n",proc_list[0].pt,MAKE_SATP(proc_list[0].pt));
+//     // printf("TRAPFRAME :%p\n tf : %p\n",TRAPFRAME, proc.trapframe);
+//     // printf("TRAMPOLINE :%p\n",TRAMPOLINE);
 
-    
-    w_sepc((uint64) 0x0);
-    s_sstatus(((uint64) USER) << SPP);
-    w_stvec((uint64)(TRAMPOLINE + ((uint64) &uservec - (uint64) &trampoline)));
-    
-    printf("[OK] proclaunch\n");
-    // printf("proc satp : %p\nmake satp : %p\n",proc_list[0].pt,MAKE_SATP(proc_list[0].pt));
-    // printf("TRAPFRAME :%p\n tf : %p\n",TRAPFRAME, proc.trapframe);
-    // printf("TRAMPOLINE :%p\n",TRAMPOLINE);
-
-    // printf("k_pt %p : %p\n",proc.trapframe->k_pt, kernel_pagetable);
-    // printf("@tp : %p, @k_pt : %p\n",proc.trapframe,&proc.trapframe->k_pt);
-    (((void (*) (uint64,uint64)) (TRAMPOLINE + ((uint64) &uservecret - (uint64) &trampoline)))) (TRAPFRAME, (uint64) MAKE_SATP(proc_list[0].pt));
-}
+//     // printf("k_pt %p : %p\n",proc.trapframe->k_pt, kernel_pagetable);
+//     // printf("@tp : %p, @k_pt : %p\n",proc.trapframe,&proc.trapframe->k_pt);
+//     (((void (*) (uint64,uint64)) (TRAMPOLINE + ((uint64) &uservecret - (uint64) &trampoline)))) (TRAPFRAME, (uint64) MAKE_SATP(proc_list[0].pt));
+// }

@@ -42,7 +42,17 @@ static inline void s_mie(uint64 x){
 }
 
 static inline void s_sie(uint64 x){
-    asm volatile("crrs sie, %0" : :"r"(x));
+    asm volatile("csrs sie, %0" : :"r"(x));
+    return;
+}
+
+static inline void s_mip(uint64 x){
+    asm volatile("csrs mip, %0"::"r"(x));
+    return;
+}
+
+static inline void c_sip(uint64 x){
+    asm volatile("csrc sip, %0" : : "r"(x));
     return;
 }
 
