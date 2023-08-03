@@ -1,5 +1,5 @@
 *.o
-kernel*
-*.d
-.vscode/
-Images/*
+kernel/kernel*
+Tex/*
+!Tex/.tex
+.vscode/*
