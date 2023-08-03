@@ -40,7 +40,6 @@ QEMUOPTS = -machine virt -cpu rv64 -smp $(CORES) -m 128M -nographic -bios none -
 ${K}/kernel: $(OBJS) ${K}/t.ld ${K}/riscv.h
 	$(LD) -T ${K}/t.ld -o ${K}/kernel $(OBJS) 
 	$(OBJDUMP) -d -S ${K}/kernel > ${K}/kernel.asm
-	$(OBJDUMP) -t ${K}/kernel | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > ${K}/kernel.sym
 
 qemu : ${K}/kernel
 	${QEMU} ${QEMUOPTS}

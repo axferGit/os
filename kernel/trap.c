@@ -114,7 +114,9 @@ void usertrap(){
     uint64 scause = r_scause();
     uint64 cause = scause & 0x7fffffffffffffffL;
 
-    struct proc * proc = cpu_list[id].proc;
+    struct proc * proc = myproc();
+    proc -> trapframe -> pc = r_sepc(); // save sepc because the context will change
+
 
     // Interrupts
     if(scause >> 63){
@@ -123,8 +125,6 @@ void usertrap(){
                 printf("SSI\n");
                 c_sip(1 << SSI); // clear SIP
                 
-                proc -> trapframe -> pc = r_sepc(); // save sepc because the context will change
-
                 proc ->state = RUNNABLE;
 
                 // switch to scheduler (on main thread)
@@ -151,9 +151,9 @@ void usertrap(){
                 switch(cpu_list[id].proc -> trapframe -> a7){
                     case(U_SYSCALL_TEST):
                         //printf("%s\n",usys[U_SYSCALL_TEST]);
-                        w_sepc(r_sepc() + 4); // return to next instruction
+                        proc -> trapframe -> pc += 4;
                         //printf(">>>>>>>>>>>>>>>> ");
-                        uartputc((char) (cpu_list[id].proc -> trapframe -> a0));
+                        uartputc((char) (myproc() -> trapframe -> a0));
                         //printf("%p",cpu_list[id].proc -> trapframe -> a0);
                         //printf(" <<<<<<<<<<<<<<<<\n");
                         break;
@@ -169,8 +169,6 @@ void usertrap(){
                 panic("");
                 break;
         }
-        proc -> trapframe -> pc = r_sepc();
-
     }
     //printf("##########\n");
     usertrapret();
@@ -179,13 +177,12 @@ void usertrap(){
 
 // jump to uservecret (trampline.S) with right arguments
 void usertrapret(){
-    uint64 id = hartid();
-    w_sepc(cpu_list[id].proc->trapframe->pc); //restore pc
+    w_sepc(myproc()->trapframe->pc); //restore pc
     s_sstatus(((uint64) USER) << SPP);
     w_stvec((uint64)(TRAMPOLINE + ((uint64) &uservec - (uint64) &trampoline)));
 
     uint64 fn = (TRAMPOLINE + ((uint64) &uservecret - (uint64) &trampoline));
-    ((void (*) (uint64,uint64)) fn) (TRAPFRAME, (uint64) MAKE_SATP(cpu_list[hartid()].proc->pt));
+    ((void (*) (uint64,uint64)) fn) (TRAPFRAME, (uint64) MAKE_SATP(myproc()->pt));
     return;
 }
 

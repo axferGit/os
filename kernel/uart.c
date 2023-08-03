@@ -1,5 +1,6 @@
 #include "memlayout.h"
 #include "uart.h"
+
 #define addrReg(Reg) ((volatile unsigned char *) (UART0 + Reg))
 #define readReg(Reg) (*(addrReg(Reg)))
 #define writeReg(Reg,v) *(addrReg(Reg)) = (v)

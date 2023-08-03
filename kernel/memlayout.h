@@ -93,7 +93,7 @@
 #define CLINT_MTIME (CLINT_BASE + 0xbff8)
 #define CLINT_MTIMECMP(hart) (CLINT_BASE + 0x4000 + 8 * (hart))
 #define TIME (*((uint64*) (CLINT_MTIME)))
-#define TIMER_INTERVAL 30000000UL
+#define TIMER_INTERVAL 300000UL
 
 // SSYSCALL
 #define S_SYSCALL_HARTID (1)
