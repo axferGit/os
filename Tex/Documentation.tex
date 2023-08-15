@@ -105,8 +105,8 @@ So, the CLINT can only generate timer interrupt for the \textbf{machine} mode.\\
 
 The PLIC makes a communication link from \textbf{external devices} to the \textbf{microprocessor}. 
 
-\subsubsection for the hart{Interrupt Gateways}
-The interrupt gateways are responsible for converting global interrupt signals into a common interrupt request format, and for controlling the flow of interrupt requests to the \textbf{PLIC core}.
+\subsubsection {Interrupt Gateways}
+The interrupt gateways are responsible for converting global interrupt signals into a common interrupt request format, and for controlling the flow of interrupt requests to the  \textbf{PLIC core}.
 
 External devices are connected to the \textbf{Gateway} through an \textbf{irq} line to send interrupt signals (either level trigger or edge trigger). 
 
@@ -189,7 +189,7 @@ In order to configure the PLIC, we need to:
 \item think about sources
 \item think about targets
 \item set sources' priority
-\item set targets' thrshold
+\item set targets' threshold
 \item enable sources for targets
 \end{itemize}
 

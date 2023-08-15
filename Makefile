@@ -16,6 +16,7 @@ OBJS = ${K}/entry.o \
 	${K}/trampoline.o \
 	${K}/swtch.o \
 	${K}/scheduler.o \
+	${K}/disk.o \
 	${U}/userproc.o 
 	
 
@@ -33,6 +34,7 @@ GDB = gdb-multiarch
 CFLAGS = ggdb -ffreestanding -fno-common -nostdlib -fno-stack-protector -O
 
 QEMUOPTS = -machine virt -cpu rv64 -smp $(CORES) -m 128M -nographic -bios none -kernel ${K}/kernel 
+QEMUOPTS += -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
 
 .PHONY : gdb clear
 

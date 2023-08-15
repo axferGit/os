@@ -1,11 +1,14 @@
 #include "types.h"
 #include "memlayout.h"
 
+#define S_PLIC_ENABLE_INT(irq) (((uint32*) PLIC_ENABLE(target))[(irq)/32] |= (1<<((irq) % 32)))
+#define S_PLIC_PRIORITY(irq,v) (*((uint32*) PLIC_PRIORITY(irq)) = v)
+
 // Initialize interrupt sources
-// Must be done only once.
 void plicinit(){
     // Interrupt priority
-    *((uint32*) PLIC_PRIORITY(UART0_IRQ)) = 1;
+    S_PLIC_PRIORITY(UART0_IRQ,1);
+    S_PLIC_PRIORITY(VIRTIO0_IRQ,1);
     return;
 }
 
@@ -15,8 +18,9 @@ void plicinit(){
 void plicinithart(){
     //uint64 target = cpuid() * 2;
     uint64 target = 0;
-    // Interrupt enables
-    ((uint32*) PLIC_ENABLE(target))[UART0_IRQ/32] |= (1<<(UART0_IRQ % 32));
+    // Interrupts enable
+    //S_PLIC_ENABLE_INT(UART0_IRQ);
+    S_PLIC_ENABLE_INT(VIRTIO0_IRQ);
     // Priority threshold
     *((uint32*) PLIC_THRESHOLD(target)) = 0;
     return;

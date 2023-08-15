@@ -16,7 +16,7 @@ static inline void timerinit(){
 }
 // Enable interrupts
 static inline void ieinit(){
-    s_mie(1 << MTI);
+    s_mie((1 << MTI) | (1 << MEI));
     s_sie(1 << SSI);
     return;
 }

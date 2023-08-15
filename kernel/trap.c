@@ -56,7 +56,7 @@ char* usys[] = {
 };
 
 void mtraphandler(){
-    //printf("\n##### MACHINE TRAP HANDLER #####\n");
+    printf("\n##### MACHINE TRAP HANDLER #####\n");
 
     uint64 mcause = r_mcause();
     uint64 cause = mcause & 0x7fffffffffffffffL;
@@ -69,9 +69,12 @@ void mtraphandler(){
                 s_mip(1 << SSI);
                 *((uint64*) CLINT_MTIMECMP(r_mhartid())) = (TIME + TIMER_INTERVAL);
                 break;
-            
+            case MEI:
+                printf("%s\n",cause_interrupt[cause]);
+                printf("Source: %i\n", plicclaim());
+                break;
             default:
-                printf("Interrupt (%p) not handled in machine mode !\n",cause);
+                printf("Interrupt \"%s\" not handled in machine mode !\n",cause_interrupt[cause]);
                 panic("");
                 break;
         }
@@ -104,7 +107,7 @@ void mtraphandler(){
                 break;
         }
     }
-    //printf("##########\n");
+    printf("##########\n");
     return; 
 }
 
