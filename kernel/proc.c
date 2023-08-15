@@ -47,14 +47,14 @@ void procinit(){
         mappages(kernel_pagetable,(void*) TRAPFRAME - (2*(i+1) - 1) * PAGESIZE, PAGESIZE, k_stack, PTE_R | PTE_W);
         mappages(kernel_pagetable,(void*) TRAPFRAME - (2*(i+1)) * PAGESIZE, PAGESIZE, 0x0, 0x0);
         
-        proc -> trapframe -> k_sp = TRAPFRAME - (2*(i+1) -1)* PAGESIZE + PAGESIZE -1;
+        proc -> trapframe -> k_sp = TRAPFRAME - (2*(i+1) -1)* PAGESIZE + PAGESIZE;
         
 
         // stack
         if((proc -> stack = alloc()) == 0){
             panic("Proc stack alloc failed\n");
         }
-        proc -> trapframe -> sp = ((uint64) STACK) + PAGESIZE - 1 ;
+        proc -> trapframe -> sp = ((uint64) STACK) + PAGESIZE;
         mappages(proc -> pt,(void*) STACK, PAGESIZE, proc -> stack, PTE_U | PTE_R | PTE_W);
 
         // UART
@@ -66,7 +66,7 @@ void procinit(){
         // context (called to launch the process)
         proc -> context.sp = proc -> trapframe -> k_sp; // kernel sp
         proc -> context.ra = (uint64) &usertrapret; // ra points to usertrapret
-        proc -> trapframe -> pc = 0;
+        proc -> trapframe -> pc = 0; // pc points to the first instruction
         proc -> state = RUNNABLE; 
 
     }

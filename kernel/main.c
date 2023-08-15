@@ -5,6 +5,7 @@
 #include "proc.h"
 #include "scheduler.h"
 #include "printf.h"
+#include "disk.h"
 
 void junk();
 
@@ -23,8 +24,16 @@ void main(){
     printf("[OK] kvminihart\n");
     procinit();
     printf("[OK] procinit\n");
-    
+    diskinit();
+    printf("[OK] diskinit\n");
+
     printf(">>> BOOT OK <<<\n");
 
+    diskread();
+
+
+    panic("Stop main\n");
+    
     scheduler();
 }
+

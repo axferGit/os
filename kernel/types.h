@@ -1,8 +1,11 @@
 #ifndef TYPES_H
 #define TYPES_H
 
+#include "memlayout.h"
+
 typedef unsigned long uint64;
 typedef unsigned int uint32;
+typedef unsigned short uint16;
 typedef unsigned char uint8;
 typedef uint64* t_pagetable;
 
@@ -82,6 +85,47 @@ struct cpu {
     struct proc* proc;
     struct context context;
 
+};
+
+struct virtq_desc {
+    uint64 addr;
+    uint32 len;
+    uint16 flags;
+    uint16 next;
+};
+
+struct virtq_avail {
+    uint16 flags;
+    uint16 idx;
+    uint16 ring [QUEUE_SIZE];
+    uint16 used_event;
+};
+
+struct virtq_used_elem  {
+    uint32 id;
+    uint32 len;
+};
+
+struct virtq_used {
+    uint16 flags;
+    uint16 idx;
+    struct virtq_used_elem ring [QUEUE_SIZE];
+    uint16 avail_event;
+};
+
+struct disk {
+    char data[2*PAGESIZE];
+    struct virtq_desc * DescriptorArea ;
+    struct virtq_avail * DriverArea;
+    struct virtq_used * DeviceArea;
+};
+
+struct virtio_blk_req {
+    uint32 type;
+    uint32 reserved;
+    uint64 sector;
+    // uint8 data[1024];
+    // uint8 status;
 };
 
 #endif

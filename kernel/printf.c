@@ -82,6 +82,10 @@ void printf(char* s, ...){
             case 's':
                 print_str(__builtin_va_arg(ap,char*));
                 break;
+            
+            case 'b':
+                print_int( __builtin_va_arg(ap,int),2,0);
+                break;
 
             case '\0':
                 uartputc('%');

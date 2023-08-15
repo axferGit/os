@@ -3,6 +3,7 @@
 #include "memlayout.h"
 #include "printf.h"
 #include "vm.h"
+#include "types.h"
 
 t_pagetable kernel_pagetable;
 
@@ -22,6 +23,9 @@ void kvminit(){
 
     // UART
     mappages(kernel_pagetable, (void*) UART0, PAGESIZE, (void*) UART0, PTE_R | PTE_W);
+
+    // VIRTIO BUS
+    mappages(kernel_pagetable, (void*) VIRTIO_MMIO_DEVICE_BASE(0), PAGESIZE, (void*) VIRTIO_MMIO_DEVICE_BASE(0), PTE_R | PTE_W);
 
     // .text section
     mappages(kernel_pagetable, (void*) KERNBASE, (uint64) &etext - KERNBASE, (void*) KERNBASE, PTE_R | PTE_X);

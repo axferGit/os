@@ -3,3 +3,4 @@ kernel/kernel*
 Tex/*
 !Tex/.tex
 .vscode/*
+Images/
