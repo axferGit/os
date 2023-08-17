@@ -128,4 +128,28 @@ struct virtio_blk_req {
     // uint8 status;
 };
 
+struct superblock {
+    uint64 magic;
+    uint32 nblock;
+    uint32 slog;
+    uint32 nlog;
+    uint32 sinode;
+    uint32 ninode;
+    uint32 sdata;
+    uint32 ndata;
+};
+
+typedef uint32 inodeent; // size for the address of a data block
+
+struct dinode {
+    uint16 type;
+    uint32 size;
+    inodeent data [NADDR];
+};
+
+struct dirent {
+    uint16 inum;
+    uint8 name[NCHAR];
+};
+
 #endif

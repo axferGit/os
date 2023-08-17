@@ -3,6 +3,8 @@
 #include "printf.h"
 #include "alloc.h"
 
+#define WRITE_32(addr,v) (*((volatile uint32*) (addr)) = v)
+#define READ_32(addr) (*((volatile uint32*) (addr)))
 #define VIRTIO_MMIO_DISK_IDX (0)
 
 __attribute__ ((aligned (PAGESIZE))) struct disk disk[NDISK];
