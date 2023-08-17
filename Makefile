@@ -19,6 +19,7 @@ OBJS = ${K}/entry.o \
 	${K}/disk.o \
 	${U}/userproc.o 
 	
+USERPROGS = README.md
 
 CONSTANT = ${K}/memlayout.h ${K}/riscv.h ${K}/types.h
 CORES = 1
@@ -36,7 +37,12 @@ CFLAGS = ggdb -ffreestanding -fno-common -nostdlib -fno-stack-protector -O
 QEMUOPTS = -machine virt -cpu rv64 -smp $(CORES) -m 128M -nographic -bios none -kernel ${K}/kernel 
 QEMUOPTS += -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
 
-.PHONY : gdb clear
+.PHONY : gdb clear fs.img
+
+fs.img : mkfs.c ${USERPROGS}
+	gcc mkfs.c -o mkfs
+	./mkfs ${USERPROGS}
+	xxd fs.img > fs.txt
 
 
 ${K}/kernel: $(OBJS) ${K}/t.ld ${K}/riscv.h

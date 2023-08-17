@@ -1,3 +1,6 @@
+#ifndef MEMLAYOUT_H
+#define MEMLAYOUT_H
+
 // QEMU
 #define KERNBASE (0x80000000UL)
 
@@ -42,6 +45,7 @@
 #define VIRTIO_BLK_T_IN 0 //read
 #define VIRTIO_BLK_T_OUT 1 //write
 #define SECTOR_SIZE (512)
+
 // Status
 #define ACKNOWLEDGE (0x1)
 #define DRIVER (0x2)
@@ -51,9 +55,6 @@
 #define DEVICE_NEEDS_RESET (64)
 
 // Memory layout
-#define WRITE_32(addr,v) (*((volatile uint32*) (addr)) = v)
-#define READ_32(addr) (*((volatile uint32*) (addr)))
-
 #define VIRTIO_MMIO_DISK_MAGIC_NUMBER(n) ((VIRTIO_MMIO_DEVICE_BASE(n)) + 0x00)
 #define VIRTIO_MMIO_DISK_MN (0x74726976)
 #define VIRTIO_MMIO_DISK_VERSION(n) ((VIRTIO_MMIO_DEVICE_BASE(n)) + 0x004)
@@ -99,6 +100,29 @@
 #define VIRTQ_DESC_F_NEXT 1
 #define VIRTQ_DESC_F_WRITE 2
 
+// FILE SYSTEM
+#define BLOCK_SIZE (2*SECTOR_SIZE)
+#define NBLOCK (2000)
+#define SSB (1)
+#define NSB (1)
+#define SLOG ((SSB) + (NSB))
+#define NLOG (30)
+#define SINODE ((SLOG) + (NLOG))
+#define NINODE (200)
+#define SBITMAP ((SINODE) + (NINODE))
+#define NBITMAP (1)
+#define SDATA ((SBITMAP) + (NBITMAP))
+#define NDATA ((NBLOCK) -1 - (SDATA))
+
+#define IPB (BLOCK_SIZE / (sizeof(struct dinode))) // Inode per block
+#define MAXINODE ((IPB)*(NINODE))
+#define T_DIR (1)
+#define T_FILE (2)
+
+#define FS_MAGIC (0x0807060504030201UL)
+#define NADDR (14)
+#define NINDADDR (BLOCK_SIZE / (sizeof(inodeent)))
+#define NCHAR (14)
 // DRAM
 #define PHYSTOP (KERNBASE + 128 * 1024 * 1024)
 
@@ -169,3 +193,5 @@
 
 // USYSCALL
 #define U_SYSCALL_TEST (1)
+
+#endif
