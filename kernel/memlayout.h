@@ -23,7 +23,7 @@
 #define CLINT_MTIME (CLINT_BASE + 0xbff8)
 #define CLINT_MTIMECMP(hart) (CLINT_BASE + 0x4000 + 8 * (hart))
 #define TIME (*((uint64*) (CLINT_MTIME)))
-#define TIMER_INTERVAL 30000000UL
+#define TIMER_INTERVAL 10000000UL
 
 // UART
 #define UART0 0x10000000UL
@@ -44,8 +44,9 @@
 #define QUEUE_SIZE (8)
 #define VIRTIO_BLK_T_IN 0 //read
 #define VIRTIO_BLK_T_OUT 1 //write
-#define SECTOR_SIZE (512)
-
+#define SECTOR_SIZE (512) // constant
+#define QALIGN (PAGESIZE) // need to be a power of 2
+#define BLOCK2SEC(blk) ((blk) * ((BLOCK_SIZE)/(SECTOR_SIZE)))
 // Status
 #define ACKNOWLEDGE (0x1)
 #define DRIVER (0x2)
@@ -99,6 +100,12 @@
 #define VIRTQ_DESC_F_READ 0
 #define VIRTQ_DESC_F_NEXT 1
 #define VIRTQ_DESC_F_WRITE 2
+
+// STATUS BIT
+#define VIRTIO_BLK_S_OK 0
+#define VIRTIO_BLK_S_IOERR 1
+#define VIRTIO_BLK_S_UNSUPP 2
+#define VIRTIO_BLK_S_UNDEF 3
 
 // FILE SYSTEM
 #define BLOCK_SIZE (2*SECTOR_SIZE)

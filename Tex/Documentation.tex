@@ -1,8 +1,13 @@
 \documentclass[10pt, a4paper]{article}
 \usepackage{hyperref}
+\usepackage{blindtext}
+\usepackage{titlesec}
 
 \begin{document}
 
+\tableofcontents
+
+\newpage
 \section{Booting the kernel}
 \subsection{Qemu}
 
@@ -264,5 +269,27 @@ A machine trap is usefull during kernel development as it enables to catch all i
 \end{itemize}
 
 The code in \textbf{trampoline.S} needs to be located at the same address in both user and kernel pagetable, as when we switch pagetables, the program counter points to the next instruction.
+
+\section{Contxt switch}
+\subsection{scheduler.c}
+
+A context is a stack enabling code to be run.
+
+In the OS, there are 2 types of contexts : that of processes (user and supervisor) and that og the kernel.
+
+There is one kernel context per hart, defined in \textbf{entry.S}. Only one context (among the 4) will perform the initialisation, the others will perform some per hart initialisation. Finaly, the kernel contexts will run the \textbf{schudler}.
+
+The scheduler is the function responsible for selecting a process and running it.
+
+As the sceduler is executed in the kernel context, there mist be a switch to the user (supervisor in fact) context. This task is ensured by \textbf{switch.S}.
+
+\subsection{switch.S}
+
+\textbf{switch.S} switch from on old context to a new one. As, switch.S is called through the function call switch(old context,new context), the old context is in charge of saving caller saved registers on the stack. So, switch just saves callee-saved registersof the old context and loads callee-saved registers from the new context.
+
+When a process is first run, the process supervisor stack is loaded with specifc register as if it had called switch() before.
+
+Note: one could have designed switch() as saving all registers, but saving only caller-saved register is more efficient. This is possible as one triggers a switch, contrary to traps which can occur at any instruction.
+
 
 \end{document}

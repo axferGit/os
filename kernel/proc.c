@@ -7,6 +7,7 @@
 #include "trap.h"
 #include "ssys.h"
 #include "trampoline.h"
+#include "swtch.h"
 
 extern char* edata;
 extern char* trampoline;
@@ -76,4 +77,15 @@ void procinit(){
 // return a pointer to current hart's process
 struct proc * myproc() {
     return cpu_list[hartid()].proc;
+}
+
+struct cpu * mycpu(){
+    return &cpu_list[hartid()];
+}
+
+// Switch from user process to scheduler process
+void sched(){
+    swtch(&(myproc()->context), &(mycpu() ->context));
+    return;
+
 }

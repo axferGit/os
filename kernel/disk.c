@@ -7,9 +7,33 @@
 #define READ_32(addr) (*((volatile uint32*) (addr)))
 #define VIRTIO_MMIO_DISK_IDX (0)
 
-__attribute__ ((aligned (PAGESIZE))) struct disk disk[NDISK];
+__attribute__ ((aligned (PAGESIZE))) struct disk disk[NDISK]; // virtques need to be Qalign aligned
+
+
+// Init free list
+void freeinit(){
+    for (uint32 i = 0; i < QUEUE_SIZE; i++){
+        disk[0].free[i] = 1;
+    }
+    return;
+}
+
+void freedesc(uint16 i){
+    disk[0].free[i] = 1;
+    return;
+}
+
+// free [idx]
+void free3desc(uint16* idx){
+    for (uint8 i = 0 ; i < 3 ; i++){
+        freedesc(i);
+    }
+    return;
+}
 
 void diskinit(){
+
+    freeinit();
 
     uint32 status = 0;
     uint32 features;
@@ -84,7 +108,7 @@ void diskinit(){
 
     WRITE_32(VIRTIO_MMIO_DISK_GUEST_PAGE_SIZE(VIRTIO_MMIO_DISK_IDX),PAGESIZE);
 
-    WRITE_32(VIRTIO_MMIO_DISK_QUEUE_ALIGN(VIRTIO_MMIO_DISK_IDX),PAGESIZE);
+    WRITE_32(VIRTIO_MMIO_DISK_QUEUE_ALIGN(VIRTIO_MMIO_DISK_IDX),QALIGN);
 
     *((volatile uint64*) (VIRTIO_MMIO_DISK_QUEUE_PFN(VIRTIO_MMIO_DISK_IDX))) = ADR2PAGE(disk[0].DescriptorArea);
     
@@ -97,57 +121,88 @@ void diskinit(){
     return;
 }
 
-void diskread(){
+// Allocate one descriptor and mark it as busy in disk[].free
+// return the idx on sucess
+// return 61 on failure
+uint32 allocdesc(){
+    for(uint16 i = 0; i < QUEUE_SIZE; i++){
+        if (disk[0].free[i]){
+            disk[0].free[i] = 0;
+            return i;
+        }
+    }
+    return -1;
+}
+
+// Alloc 3 descriptors into [idx]
+// return 0 on success
+// return -1 on failure
+uint32 alloc3desc(uint16* idx){
+    for (uint8 i = 0; i < 3; i++){
+        if ((idx[i] = allocdesc()) == -1){
+            for (uint8 j = 0; j < i; j++){
+                freedesc(idx[j]);
+            }
+            return -1;
+        };
+    }
+    return 0; 
+}
+
+// Create request
+void makerequest(struct virtio_blk_req* blk_request, uint32 t_rqt, uint64 blk){
+    blk_request -> type = t_rqt;
+    blk_request -> reserved = 0;
+    blk_request -> sector = BLOCK2SEC(blk);
+
+}
+
+void diskrequest(uint32 t_rqt,struct buf * b){
+    uint16 idx[3];
     struct virtio_blk_req blk_request;
-    blk_request.type = VIRTIO_BLK_T_IN;
-    blk_request.reserved = 0;
-    blk_request.sector = 0;
 
-    disk[0].DescriptorArea[0].addr =(uint64) &blk_request;
-    disk[0].DescriptorArea[0].len = sizeof(blk_request);
-    disk[0].DescriptorArea[0].flags = VIRTQ_DESC_F_NEXT;
-    disk[0].DescriptorArea[0].next = 1;
+    while(alloc3desc(idx) == -1){
+        ;
+    }
+    
+    makerequest(&blk_request,t_rqt,b->blk);
 
-    uint8 buffer_data[512];
-    memset(buffer_data,0x62,sizeof(buffer_data));
 
-    disk[0].DescriptorArea[1].addr = (uint64) buffer_data;
-    disk[0].DescriptorArea[1].len = sizeof(buffer_data);
-    disk[0].DescriptorArea[1].flags = VIRTQ_DESC_F_NEXT | VIRTQ_DESC_F_WRITE;
-    disk[0].DescriptorArea[1].next = 2;
+    disk[0].DescriptorArea[idx[0]].addr =(uint64) &blk_request;
+    disk[0].DescriptorArea[idx[0]].len = sizeof(blk_request);
+    disk[0].DescriptorArea[idx[0]].flags = VIRTQ_DESC_F_NEXT;
+    disk[0].DescriptorArea[idx[0]].next = idx[1];
 
-    uint8 buffer_status[1];
-    buffer_status[0] = 3; //TODO: robust
+    
+    disk[0].DescriptorArea[idx[1]].addr = (uint64) b->data;
+    disk[0].DescriptorArea[idx[1]].len = sizeof(b->data);
+    disk[0].DescriptorArea[idx[1]].flags = VIRTQ_DESC_F_NEXT | ((t_rqt == VIRTIO_BLK_T_IN) ? VIRTQ_DESC_F_WRITE : VIRTQ_DESC_F_READ);
+    disk[0].DescriptorArea[idx[1]].next = idx[2];
 
-    disk[0].DescriptorArea[2].addr = (uint64) &buffer_status;
-    disk[0].DescriptorArea[2].len = 1;
-    disk[0].DescriptorArea[2].flags = VIRTQ_DESC_F_WRITE;
-    disk[0].DescriptorArea[2].next = 0;
+    b -> status = VIRTIO_BLK_S_UNDEF;
+    disk[0].DescriptorArea[idx[2]].addr = (uint64) &b->status;
+    disk[0].DescriptorArea[idx[2]].len = sizeof(b->status);
+    disk[0].DescriptorArea[idx[2]].flags = VIRTQ_DESC_F_WRITE;
+    disk[0].DescriptorArea[idx[2]].next = 0;
 
-    disk[0].DriverArea ->ring[disk[0].DriverArea -> idx] = 0;
-    disk[0].DriverArea -> idx += 1;
+    disk[0].DriverArea ->ring[disk[0].DriverArea -> idx] = idx[0];
+    disk[0].DriverArea -> idx += 1; // no need to modulo
+    
+
     __sync_synchronize();
     WRITE_32(VIRTIO_MMIO_DISK_QUEUE_NOTIFY(VIRTIO_MMIO_DISK_IDX),0);
+    
 
-    while(disk[0].DeviceArea ->idx == 0){
-        printf("Status after request: %p\n",buffer_status[0]);
+    while(b -> status == 3){
+        if((b -> status ==  1) || (b -> status ==  2)){
+            printf("Request has failed : status = %i\n",b->status);
+            panic("");
+        }
+
+        printf("Status after request: %i\n",b->status);
     };
 
-    printf("Virtq_used_elm: id: %i --len: %i\n",disk[0].DeviceArea->ring[0].id, disk[0].DeviceArea->ring[0].len);
-    printf("Virtq_used_elm: id: %i --len: %i\n",disk[0].DeviceArea->ring[1].id, disk[0].DeviceArea->ring[1].len);
-    printf("Virtq_used_elm: id: %i --len: %i\n",disk[0].DeviceArea->ring[2].id, disk[0].DeviceArea->ring[2].len);
-
-    for (int i = 0; i < sizeof(buffer_data); i++){
-        printf("%i",buffer_data[i]);
-    };
-    printf("\n");
-
-    printf("Interrupt status: %p\n",READ_32(VIRTIO_MMIO_DISK_INTERRUPT_STATUS(VIRTIO_MMIO_DISK_IDX)));
-    printf("used idx: %p\n",disk[0].DeviceArea ->idx);
-    printf("Status: %p\n",(uint64) buffer_status[0]);
-   
-
-    panic("OK!\n");
+    free3desc(idx);
 
     return;   
 
