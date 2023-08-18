@@ -17,6 +17,7 @@ OBJS = ${K}/entry.o \
 	${K}/swtch.o \
 	${K}/scheduler.o \
 	${K}/disk.o \
+	${K}/buf.o \
 	${U}/userproc.o 
 	
 USERPROGS = README.md
@@ -39,7 +40,7 @@ QEMUOPTS += -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-devic
 
 .PHONY : gdb clear fs.img
 
-fs.img : mkfs.c ${USERPROGS}
+fs.img : mkfs.c ${USERPROGS} ${CONSTANT}
 	gcc mkfs.c -o mkfs
 	./mkfs ${USERPROGS}
 	xxd fs.img > fs.txt

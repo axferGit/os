@@ -140,12 +140,12 @@ struct superblock {
     uint32 ndata;
 };
 
-typedef uint32 inodeent; // size for the address of a data block
+typedef uint64 inodeent; // size for the address of a data block
 
 struct dinode {
-    uint16 type;
-    uint32 size;
-    inodeent data [NADDR];
+    uint16 type; // FILE / DIR / UNDEF
+    uint32 size; // size in bytes
+    inodeent data [NADDR]; // addresses of data blocks
 };
 
 struct dirent {
@@ -154,9 +154,17 @@ struct dirent {
 };
 
 struct buf {
+    uint8 written;
     uint64 blk;
     uint8 data[BLOCK_SIZE];
     uint8 status;
 };
+
+struct inode {
+    uint16 inum;
+    struct dinode di;
+};
+
+
 
 #endif

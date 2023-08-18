@@ -8,5 +8,6 @@ void allocinit();
 void free(void*);
 void* alloc();
 void memset(void*,char,uint32);
+void memcpy(void*,void*,uint32);
 
 #endif

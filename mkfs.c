@@ -9,8 +9,7 @@
 #include "kernel/memlayout.h"
 #include "kernel/types.h"
 
-#define IBLOCK(inum) (SINODE + ((inum) / (IPB)))
-#define IBLOCKOFF(inum) ((inum) % (IPB))
+
 #define min(a,b) (((a) < (b)) ? (a) : (b))
 
 uint32 ninode = 0;
@@ -27,9 +26,9 @@ uint8 idx(uint8 tab){
 }
 
 // Write [buf] to block nb [blk]
-void wblock(int blk, void* buf){
+void wblock(uint64 blk, void* buf){
     if(!((0 <= blk) && (blk < NBLOCK))){
-        printf("blk out of range: %i\n",blk);
+        printf("blk out of range: %li\n",blk);
         exit(1);
     }
     if (lseek(fdfs, blk * BLOCK_SIZE,SEEK_SET) == -1){
@@ -44,9 +43,9 @@ void wblock(int blk, void* buf){
 }
 
 // Read block nb [blk] to [buf] 
-void rblock(int blk, void* buf){
+void rblock(uint64 blk, void* buf){
     if(!((0 <= blk) && (blk < NBLOCK))){
-        printf("blk out of range: %i\n",blk);
+        printf("blk out of range: %li\n",blk);
         exit(1);
     }
     if(!blk){
@@ -65,9 +64,9 @@ void rblock(int blk, void* buf){
 }
 
 // Return a new data block number
-uint32 dalloc(){
+uint64 dalloc(){
     uint8 bitmap [BLOCK_SIZE];
-    int i;
+    uint64 i;
     rblock(SBITMAP,bitmap);
     for (i = 0; i < NDATA; i++){
         if(bitmap[i] != 0xff){
@@ -105,11 +104,11 @@ void wsb(struct superblock* sb){
 // Write inode [inum] pointed by [di]
 void winode(uint16 inum, struct dinode* di){
     uint8 buf[BLOCK_SIZE];
-    uint32 blk = IBLOCK(inum);
+    uint64 blk = IBLOCK(inum);
     uint32 offset = IBLOCKOFF(inum);
     
     if (! ((SINODE <= blk) && (blk < (SINODE + NINODE)))){
-        printf("inode out of range : %i\n",blk);
+        printf("inode out of range : %li\n",blk);
         exit(1);
     }
 
@@ -123,11 +122,11 @@ void winode(uint16 inum, struct dinode* di){
 // Read inode [inum] to [di]
 void rinode(uint16 inum, struct dinode* di){
     uint8 buf[BLOCK_SIZE];
-    uint32 blk = IBLOCK(inum);
+    uint64 blk = IBLOCK(inum);
     uint32 offset = IBLOCKOFF(inum);
 
     if (! ((SINODE <= blk) && (blk < (SINODE + NINODE)))){
-        printf("inode out of range : %i\n",blk);
+        printf("inode out of range : %li\n",blk);
         exit(1);
     }
 
@@ -210,7 +209,6 @@ void ainode(uint16 inum, void* data, int sz){
         winode(inum,&di);
 
     };
-
     
     return;
 }
