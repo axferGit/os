@@ -47,6 +47,9 @@
 #define SECTOR_SIZE (512) // constant
 #define QALIGN (PAGESIZE) // need to be a power of 2
 #define BLOCK2SEC(blk) ((blk) * ((BLOCK_SIZE)/(SECTOR_SIZE)))
+#define IBLOCK(inum) (SINODE + ((inum) / (IPB)))
+#define IBLOCKOFF(inum) ((inum) % (IPB))
+
 // Status
 #define ACKNOWLEDGE (0x1)
 #define DRIVER (0x2)
@@ -200,5 +203,8 @@
 
 // USYSCALL
 #define U_SYSCALL_TEST (1)
+
+// BUFFER CACHE
+#define NBUF 16
 
 #endif

@@ -156,7 +156,7 @@ void makerequest(struct virtio_blk_req* blk_request, uint32 t_rqt, uint64 blk){
     blk_request -> sector = BLOCK2SEC(blk);
 
 }
-
+// Perfom [t_rqt] request on buffer [b]
 void diskrequest(uint32 t_rqt,struct buf * b){
     uint16 idx[3];
     struct virtio_blk_req blk_request;
@@ -198,7 +198,6 @@ void diskrequest(uint32 t_rqt,struct buf * b){
             printf("Request has failed : status = %i\n",b->status);
             panic("");
         }
-
         printf("Status after request: %i\n",b->status);
     };
 

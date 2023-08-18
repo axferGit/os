@@ -48,3 +48,11 @@ void memset(void* dst, char v, uint32 sz){
     }
     return;
 }
+
+void memcpy(void* dst, void* src, uint32 sz){
+    uint32 p;
+    for(p = 0; p <  sz; p++){
+        ((uint8*) dst)[p] = ((uint8*) src)[p];
+    };
+    return;
+}

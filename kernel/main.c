@@ -6,6 +6,7 @@
 #include "scheduler.h"
 #include "printf.h"
 #include "disk.h"
+#include "buf.h"
 
 void junk();
 
@@ -29,14 +30,13 @@ void main(){
 
     printf(">>> BOOT OK <<<\n");
 
-    struct buf b;
-    b.blk = 0;
-    for (uint32 i = 0 ; i < 32; i++){
-        printf(">>>>%i\n",i);
-        memset(b.data,i,sizeof(b.data));
-        diskrequest(VIRTIO_BLK_T_OUT,&b);
-    }
     
+    uint8 buf[BLOCK_SIZE];
+    memset(buf,0,sizeof(buf));
+
+    struct inode * in = oinode(1);
+    rinode(in,0,BLOCK_SIZE,buf);
+    printf("%s\n",buf);
 
     panic("Stop main\n");
     
