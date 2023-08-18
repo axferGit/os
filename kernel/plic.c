@@ -8,7 +8,7 @@
 void plicinit(){
     // Interrupt priority
     S_PLIC_PRIORITY(UART0_IRQ,1);
-    S_PLIC_PRIORITY(VIRTIO0_IRQ,1);
+    S_PLIC_PRIORITY(VIRTIO0_IRQ,0);
     return;
 }
 

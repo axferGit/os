@@ -10,5 +10,6 @@ extern struct cpu cpu_list[NHART];
 extern void procinit();
 extern void proclaunch();
 extern struct proc * myproc();
+extern void sched();
 
 #endif

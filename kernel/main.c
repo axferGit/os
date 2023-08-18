@@ -29,11 +29,18 @@ void main(){
 
     printf(">>> BOOT OK <<<\n");
 
-    diskread();
-
+    struct buf b;
+    b.blk = 0;
+    for (uint32 i = 0 ; i < 32; i++){
+        printf(">>>>%i\n",i);
+        memset(b.data,i,sizeof(b.data));
+        diskrequest(VIRTIO_BLK_T_OUT,&b);
+    }
+    
 
     panic("Stop main\n");
     
+    // Launch process
     scheduler();
 }
 

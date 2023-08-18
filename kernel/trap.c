@@ -56,7 +56,7 @@ char* usys[] = {
 };
 
 void mtraphandler(){
-    printf("\n##### MACHINE TRAP HANDLER #####\n");
+    //printf("\n##### MACHINE TRAP HANDLER #####\n");
 
     uint64 mcause = r_mcause();
     uint64 cause = mcause & 0x7fffffffffffffffL;
@@ -107,7 +107,7 @@ void mtraphandler(){
                 break;
         }
     }
-    printf("##########\n");
+    //printf("##########\n");
     return; 
 }
 
@@ -131,7 +131,7 @@ void usertrap(){
                 proc ->state = RUNNABLE;
 
                 // switch to scheduler (on main thread)
-                swtch(&(proc->context), &(cpu_list[id].context));
+                sched();
                 // resume from scheduler (on main thread)
 
                 break;

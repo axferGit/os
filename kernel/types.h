@@ -114,10 +114,11 @@ struct virtq_used {
 };
 
 struct disk {
-    char data[2*PAGESIZE];
+    char data[2*QALIGN]; // 
     struct virtq_desc * DescriptorArea ;
     struct virtq_avail * DriverArea;
     struct virtq_used * DeviceArea;
+    uint8 free[QUEUE_SIZE];
 };
 
 struct virtio_blk_req {
@@ -150,6 +151,12 @@ struct dinode {
 struct dirent {
     uint16 inum;
     uint8 name[NCHAR];
+};
+
+struct buf {
+    uint64 blk;
+    uint8 data[BLOCK_SIZE];
+    uint8 status;
 };
 
 #endif
