@@ -198,13 +198,16 @@ void ainode(uint16 inum, void* data, int sz){
             };
         };
         
+        // number of bytes to be read from data and written to buffer
+        uint32 nb = min(sz,BLOCK_SIZE - off);
+
         rblock(barray[fbn],buf);
-        memcpy(buf + off,((uint8*) data) + wsz, min(sz,BLOCK_SIZE - off));
+        memcpy(buf + off,((uint8*) data) + wsz, nb);
         wblock(barray[fbn],buf);
         
-        sz -= min(sz,BLOCK_SIZE - off);
-        wsz += min(sz,BLOCK_SIZE - off);
-        di.size += min(sz,BLOCK_SIZE - off);
+        sz -= nb;
+        wsz += nb;
+        di.size += nb;
 
         winode(inum,&di);
 
