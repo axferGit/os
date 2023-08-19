@@ -17,7 +17,7 @@ OBJS = ${K}/entry.o \
 	${K}/swtch.o \
 	${K}/scheduler.o \
 	${K}/disk.o \
-	${K}/buf.o \
+	${K}/fs.o \
 	${U}/userproc.o 
 	
 USERPROGS = README.md

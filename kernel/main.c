@@ -6,7 +6,7 @@
 #include "scheduler.h"
 #include "printf.h"
 #include "disk.h"
-#include "buf.h"
+#include "fs.h"
 
 void junk();
 
@@ -31,11 +31,12 @@ void main(){
     printf(">>> BOOT OK <<<\n");
 
     
-    uint8 buf[BLOCK_SIZE];
+    uint8 buf[2*BLOCK_SIZE];
     memset(buf,0,sizeof(buf));
 
-    struct inode * in = oinode(1);
-    rinode(in,0,BLOCK_SIZE,buf);
+    struct inode * in = openi(1);
+    uint32 i = readi(in,0,2*BLOCK_SIZE,buf);
+    printf("nb read: %i\n",i);
     printf("%s\n",buf);
 
     panic("Stop main\n");
