@@ -220,7 +220,8 @@ void ainode(uint16 inum, void* data, int sz){
 void adirent(uint16 inum_parent, char* name, uint16 inum){
     struct dirent de;
     de.inum = inum;
-    strncpy(de.name,name,NCHAR);
+    strncpy(de.name,name,NCHAR-1);
+    de.name[NCHAR]= '\0';
     ainode(inum_parent,&de,sizeof(de));
     return;
 }

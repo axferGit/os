@@ -3,8 +3,10 @@
 #include "alloc.h"
 #include "disk.h"
 #include "printf.h"
+#include "proc.h"
+#include "vm.h"
 
-#define ADDR2BLOCK(addr) ((addr) / (BLOCK_SIZE))
+#define ADDR2FBLOCK(addr) ((addr) / (BLOCK_SIZE))
 #define ADDR2OFF(addr) ((addr) % (BLOCK_SIZE))
 #define min(a,b) (((a) < (b)) ? (a) : (b))
 #define max(a,b) (((a) > (b)) ? (a) : (b))
@@ -12,6 +14,7 @@
 
 struct buf bcache [NBUF];
 struct inode inode_list [NINODE * IPB];
+struct file file_list [NFILE];
 
 // Return a free buf from cache buffers list
 struct buf * getb(){
@@ -26,7 +29,7 @@ void createb(struct buf * b, uint8 t_rqt, uint32 blk){
     return;
 }
 
-// Read block number [blk] inot a buffer
+// Read block number [blk] into a buffer
 // return the buffer
 struct buf * readb(uint64 blk){
     struct buf * b = getb();
@@ -35,6 +38,18 @@ struct buf * readb(uint64 blk){
     return b;
 }
 
+// Read the data block with file block number [fbn] in inode [i]
+struct buf * readfb(struct inode* i,uint64 fbn){
+    uint64 blk;
+    if (NADDR <= fbn){
+        struct buf * b = readb(i->di.data[NADDR]);
+        fbn -= NADDR;
+        blk = ((inodeent*) b->data)[fbn];
+    } else {
+        blk = i->di.data[fbn];
+    }
+    return readb(blk);
+}
 
 // Read from inode [i] [sz] bytes maximum starting from [off] into data buffer [buffer]
 // return the number of bytes read
@@ -48,13 +63,14 @@ uint32 readi(struct inode* i,uint32 off, uint32 sz, uint8* buffer){
     } else {
         sz = min(sz,(i->di.size - off));
     }
-    printf("sz: %i\n",sz);
-   
+
     while(sz > 0){
-        uint32 fbn = ADDR2BLOCK(off);
+        uint32 fbn = ADDR2FBLOCK(off);
         uint32 fbn_off = ADDR2OFF(off);
         uint32 nb = min(sz,(BLOCK_SIZE) - fbn_off);
-        b = readb(i->di.data[fbn]);
+
+
+        b = readfb(i,fbn);
         
         memcpy(buffer+tot,b->data + fbn_off,nb);
 
@@ -82,4 +98,84 @@ struct inode * openi(uint16 inum){
     return in;
 }
 
+uint32 strcmp(uint8* s1, uint8* s2){
+    if (s1[0] == s2[0]){
+        if(s1[0] == 0){
+            return 0;
+        } else {
+            return strcmp(s1+1,s2+1);
+        }
+    } else {
+        return -1;
+    }
+}
+
+
+// Return the inode number of file [name]
+// return -1 on failure
+uint16 find(uint8* name){
+    // Make sure it is a directory
+    struct inode * inroot = openi(0);
+    uint32 sz = inroot->di.size;
+    uint32 nb=0;
+    struct dirent dent;
+
+    while(readi(inroot,nb,sizeof(struct dirent),(uint8*) &dent) == sizeof(struct dirent)){
+        nb+=sizeof(struct dirent);
+        if(!strcmp(name,dent.name)){
+            return dent.inum;
+        }
+    }
+    return -1;   
+}
+
+// Return a pointer to an available file in the file list
+struct file * getfile(){
+    return &file_list[0];
+}
+
+uint32 getofile(){
+    //struct proc* p = myproc();
+    return 0;
+}
+
+
+/*
+int fd = open("README.md",O_RO);
+
+>>> SYS call
+sys_open(){
+    char* name [NCHAR];
+    cpstruser(name,argn(0)) // copy string from user land to kernel land
+    int inum = find(name)
+    if (inum !=-1){
+        sqtruct proc * p = myproc();
+        struct file* f = getfile();
+        f->off = 0;
+        f->in  = openi(inum); 
+        int f = getfile();
+        uint32 fd = getofile();
+        p->ofile[fd] = f; //TODO : clean way to find available slot in open files
+        p->trapframe->a0 = fd;
+    }
+    else {
+        printf("error :can not find file");
+    }
+    return;
+}
+
+sys_read(){
+    uint32 fd = (uint32) argn(0);
+    uint8* buf = (uint8*) argn(1);
+    uint32 n = (uint32) argn(2);
+
+    struct proc* p = myproc(){
+        struct file f * = p->ofile[fd];
+        if(f != 0){
+            readi()
+        }
+    }
+}
+
+*/
 

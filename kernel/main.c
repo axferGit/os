@@ -30,16 +30,7 @@ void main(){
 
     printf(">>> BOOT OK <<<\n");
 
-    
-    uint8 buf[2*BLOCK_SIZE];
-    memset(buf,0,sizeof(buf));
-
-    struct inode * in = openi(1);
-    uint32 i = readi(in,0,2*BLOCK_SIZE,buf);
-    printf("nb read: %i\n",i);
-    printf("%s\n",buf);
-
-    panic("Stop main\n");
+    //panic("Stop main\n");
     
     // Launch process
     scheduler();

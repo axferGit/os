@@ -18,7 +18,9 @@ OBJS = ${K}/entry.o \
 	${K}/scheduler.o \
 	${K}/disk.o \
 	${K}/fs.o \
-	${U}/userproc.o 
+	${K}/syscall.o \
+	${U}/userproc.o \
+	${U}/userlib.o
 	
 USERPROGS = README.md
 
@@ -62,8 +64,8 @@ gdb :
 %.o : %.c ${CONSTANT}
 	${CC} -${CFLAGS} -c $< -o $@
 
-%.o : %.S
-	${AS} $< -o $@
+%.o : %.S ${CONSTANT}
+	${CC} -${CFLAGS} -c $< -o $@
 
 clear :
 	rm ${OBJS}

@@ -79,6 +79,7 @@ struct proc {
     char * stack;
     struct trapframe * trapframe;
     struct context context;
+    struct file* ofile [NOFILE];
 };
 
 struct cpu {
@@ -163,6 +164,11 @@ struct buf {
 struct inode {
     uint16 inum;
     struct dinode di;
+};
+
+struct file {
+    uint32 off;
+    struct inode * in;
 };
 
 

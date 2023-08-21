@@ -9,7 +9,7 @@
 #include "trap.h"
 #include "uart.h"
 #include "swtch.h"
-
+#include "syscall.h"
 
 extern void uservecret(uint64,uint64);
 extern void uservec();
@@ -44,6 +44,7 @@ char* cause_exception[] = {
     [11] "Environment call from M-mode",
     [12] "Instruction page fault",
     [13] "Load page fault",
+    [14] "Reserved",
     [15] "Store/Amo page fault"
 };
 
@@ -99,7 +100,7 @@ void mtraphandler(){
             break;
 
             default:
-                printf("Exception (%p) not handled in machine mode !\n",cause);
+                printf("'%s' not handled in machine mode !\n",cause_exception[cause]);
                 printf("mepc  : %p\n",r_mepc());
                 printf("mtval : %p\n",r_mtval());
                 printf("satp  : %p\n",r_satp());
@@ -156,7 +157,10 @@ void usertrap(){
                         //printf("%s\n",usys[U_SYSCALL_TEST]);
                         proc -> trapframe -> pc += 4;
                         //printf(">>>>>>>>>>>>>>>> ");
-                        uartputc((char) (myproc() -> trapframe -> a0));
+                        //printf("Before sys_test\n");
+                        sys_call[U_SYSCALL_TEST]();
+                        
+                        //uartputc((char) (myproc() -> trapframe -> a0));
                         //printf("%p",cpu_list[id].proc -> trapframe -> a0);
                         //printf(" <<<<<<<<<<<<<<<<\n");
                         break;
