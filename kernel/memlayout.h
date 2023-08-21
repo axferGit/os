@@ -160,7 +160,7 @@
 #define ADR2PAGE(addr) (((uint64) addr) / PAGESIZE)
 
 // PROCESS
-#define NPROC 3
+#define NPROC 1
 
 //RISC-V
 // Interrupt
@@ -202,9 +202,12 @@
 #define S_SYSCALL_HARTID (1)
 
 // USYSCALL
-#define U_SYSCALL_TEST (1)
+#define NSYSCALL 1 // number of sys calls
+#define U_SYSCALL_TEST (0)
 
 // BUFFER CACHE
 #define NBUF 16
+#define NFILE 16
+#define NOFILE 16
 
 #endif

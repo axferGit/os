@@ -14,5 +14,7 @@ extern void printmemory();
 extern void print_pt(t_pagetable);
 extern void printvm();
 extern void print_page(t_pagetable, uint64);
+extern uint64 kva(t_pagetable,void*);
+
 
 #endif

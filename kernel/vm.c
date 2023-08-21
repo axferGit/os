@@ -13,6 +13,7 @@ extern uint64 erodata;
 extern uint64 edata;
 extern uint64 end;
 
+
 // iitialize kernel page table
 // panic on error
 void kvminit(){
@@ -36,8 +37,9 @@ void kvminit(){
     // .data .bss sections
     mappages(kernel_pagetable, (void*) &erodata, (uint64) &edata - (uint64) &erodata, (void*) &erodata, PTE_R | PTE_W);
     
-    // Unused DRAM
-    mappages(kernel_pagetable,(void*) &end, PHYSTOP - (uint64) &end, (void*) &end, PTE_R | PTE_W);
+    // Unused DRAM (including userproc)
+    mappages(kernel_pagetable,(void*) &edata, PHYSTOP - (uint64) &edata, (void*) &edata, PTE_R | PTE_W);
+    printf("&end %p\n",&end);
 
     // TRAMPOLINE
     mappages(kernel_pagetable,(void*) TRAMPOLINE, PAGESIZE, (void*) &trampoline, PTE_X);
@@ -111,6 +113,7 @@ void* walk(t_pagetable pagetable, void* va, int bool_alloc){
                 
                 if((newpage = alloc()) == 0){
                     printf("Alloc failed\n");
+                    return 0;
                 }
                 p[index] = PAGE2PTE((uint64)newpage,0);
                 p = (uint64*) newpage;
@@ -124,6 +127,20 @@ void* walk(t_pagetable pagetable, void* va, int bool_alloc){
         }
     }
     return &p[index];
+}
+
+// Translate a user land address [addr] into its address on the RAM
+// return 0 on failure
+uint64 kva(t_pagetable pt,void* addr){
+    uint64* p = walk(pt,addr,0);
+
+    if ((uint64) p == 0){
+        return 0;
+    }
+    else {
+        return PTE2PAGE(*p) + (((uint64) addr) % PAGESIZE);
+    }
+
 }
 
 void printvm(){
@@ -168,8 +185,9 @@ void print_pt(t_pagetable pt){
 void print_page(t_pagetable pt, uint64 va){
     int level;
     t_pagetable p;
+    uint64 pte;
     for (level = 2, p = pt; 0 < level ; level--){
-        uint64 pte = p[INDEXLEVEL(va,level)];
+        pte = p[INDEXLEVEL(va,level)];
         if ((pte & 0xf) != 0x1 ){
             printf("Pb page at level %i\n %p\n",level,pte);
             panic("");
@@ -177,7 +195,8 @@ void print_page(t_pagetable pt, uint64 va){
         p = (uint64*) PTE2PAGE(pte);
         
     }
-    uint64 pte = p[INDEXLEVEL(va,level)];
+    // TODO: be sure PTE_V is set in the last page
+    pte = p[INDEXLEVEL(va,level)];
     printf("Mapping successfull\n");
     printf("Page va : %p , address %p\n",(va / PAGESIZE) * PAGESIZE,va);
     printf("Page pa : %p , address %p\n", PTE2PAGE(pte), PTE2PAGE(pte) + (va % PAGESIZE));

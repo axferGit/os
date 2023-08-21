@@ -11,6 +11,10 @@
 
 extern char* edata;
 extern char* trampoline;
+extern uint64 euser_text;
+extern uint64 euser_data;
+extern uint64 euser_rodata;
+extern uint64 euser_bss;
 
 struct proc proc_list[NPROC];
 struct cpu cpu_list[NHART];
@@ -45,10 +49,11 @@ void procinit(){
         if ((k_stack = alloc()) == 0){
             panic("Fail to alloc k_stack\n");
         }
+        printf("kernel satck for proc %i : %p\n",i,k_stack);
         mappages(kernel_pagetable,(void*) TRAPFRAME - (2*(i+1) - 1) * PAGESIZE, PAGESIZE, k_stack, PTE_R | PTE_W);
-        mappages(kernel_pagetable,(void*) TRAPFRAME - (2*(i+1)) * PAGESIZE, PAGESIZE, 0x0, 0x0);
+        mappages(kernel_pagetable,(void*) TRAPFRAME - (2*(i+1)) * PAGESIZE, PAGESIZE, 0x0, 0x0); // Guard page
         
-        proc -> trapframe -> k_sp = TRAPFRAME - (2*(i+1) -1)* PAGESIZE + PAGESIZE;
+        proc -> trapframe -> k_sp = (TRAPFRAME - (2*(i+1) -1)* PAGESIZE) + PAGESIZE;
         
 
         // stack
@@ -63,6 +68,11 @@ void procinit(){
 
         // text
         mappages(proc -> pt, (void*) 0x0, PAGESIZE, (void*) &edata, PTE_U | PTE_X | PTE_R | PTE_W);
+
+        // rodata.str1.8
+        mappages(proc->pt, (void*) PAGESIZE, PAGESIZE, (void*) &euser_data, PTE_U | PTE_R | PTE_W);
+
+        printf("User rodata: %p\n",(uint64) &euser_data);
 
         // context (called to launch the process)
         proc -> context.sp = proc -> trapframe -> k_sp; // kernel sp
