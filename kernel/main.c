@@ -30,8 +30,6 @@ void main(){
 
     printf(">>> BOOT OK <<<\n");
 
-    //panic("Stop main\n");
-    
     // Launch process
     scheduler();
 }

@@ -202,12 +202,17 @@
 #define S_SYSCALL_HARTID (1)
 
 // USYSCALL
-#define NSYSCALL 1 // number of sys calls
-#define U_SYSCALL_TEST (0)
+#define NSYSCALL 4 // number of sys calls
+#define U_SYSCALL_PRINT_STR 0
+#define U_SYSCALL_OPEN 1
+#define U_SYSCALL_PRINT_HEX 2
+#define U_SYSCALL_READ 3
+
 
 // BUFFER CACHE
 #define NBUF 16
 #define NFILE 16
 #define NOFILE 16
+#define NRQST 16
 
 #endif

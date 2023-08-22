@@ -1,9 +1,0 @@
-target remote localhost:1234
-layout split
-layout regs
-focus cmd
-#Comments
-#usertrap
-b * 0x80001656
-# mtraphandler
-b* 0x80001458

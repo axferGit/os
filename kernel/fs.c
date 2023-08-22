@@ -84,7 +84,7 @@ uint32 readi(struct inode* i,uint32 off, uint32 sz, uint8* buffer){
 
 // Retrurn a pointer to a free structure inside inode list
 struct inode* geti(){
-    return &inode_list[0];
+    return &(inode_list[0]);
 }
 
 // Open inode [inum] to an inode strcuture
@@ -114,7 +114,7 @@ uint32 strcmp(uint8* s1, uint8* s2){
 // Return the inode number of file [name]
 // return -1 on failure
 uint16 find(uint8* name){
-    // Make sure it is a directory
+    // TOSO : Make sure it is a directory
     struct inode * inroot = openi(0);
     uint32 sz = inroot->di.size;
     uint32 nb=0;
@@ -134,8 +134,8 @@ struct file * getfile(){
     return &file_list[0];
 }
 
+// return an free file destriptor
 uint32 getofile(){
-    //struct proc* p = myproc();
     return 0;
 }
 

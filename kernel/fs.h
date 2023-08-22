@@ -13,6 +13,8 @@ extern struct buf * readb(uint64);
 extern uint32 readi(struct inode*,uint32,uint32,uint8*);
 extern struct inode* geti();
 extern struct inode * openi(uint16);
-uint16 find(uint8*);
+extern uint16 find(uint8*);
+extern struct file * getfile();
+extern uint32 getofile();
 
 #endif

@@ -2,12 +2,15 @@
 #include "memlayout.h"
 #include "printf.h"
 #include "alloc.h"
+#include "vm.h"
 
 #define WRITE_32(addr,v) (*((volatile uint32*) (addr)) = v)
 #define READ_32(addr) (*((volatile uint32*) (addr)))
 #define VIRTIO_MMIO_DISK_IDX (0)
 
+
 __attribute__ ((aligned (PAGESIZE))) struct disk disk[NDISK]; // virtques need to be Qalign aligned
+struct virtio_blk_req blk_request_list[NRQST];
 
 
 // Init free list
@@ -149,6 +152,10 @@ uint32 alloc3desc(uint16* idx){
     return 0; 
 }
 
+struct virtio_blk_req* getrequest(){
+    return &blk_request_list[0];
+}
+
 // Create request
 void makerequest(struct virtio_blk_req* blk_request, uint32 t_rqt, uint64 blk){
     blk_request -> type = t_rqt;
@@ -159,17 +166,17 @@ void makerequest(struct virtio_blk_req* blk_request, uint32 t_rqt, uint64 blk){
 // Perfom [t_rqt] request on buffer [b]
 void diskrequest(uint32 t_rqt,struct buf * b){
     uint16 idx[3];
-    struct virtio_blk_req blk_request;
+    struct virtio_blk_req* blk_request = getrequest();
 
     while(alloc3desc(idx) == -1){
         ;
     }
     
-    makerequest(&blk_request,t_rqt,b->blk);
+    makerequest(blk_request,t_rqt,b->blk);
 
 
-    disk[0].DescriptorArea[idx[0]].addr =(uint64) &blk_request;
-    disk[0].DescriptorArea[idx[0]].len = sizeof(blk_request);
+    disk[0].DescriptorArea[idx[0]].addr =(uint64) blk_request;
+    disk[0].DescriptorArea[idx[0]].len = sizeof(*blk_request);
     disk[0].DescriptorArea[idx[0]].flags = VIRTQ_DESC_F_NEXT;
     disk[0].DescriptorArea[idx[0]].next = idx[1];
 
@@ -186,15 +193,15 @@ void diskrequest(uint32 t_rqt,struct buf * b){
     disk[0].DescriptorArea[idx[2]].next = 0;
 
     disk[0].DriverArea ->ring[disk[0].DriverArea -> idx] = idx[0];
-    disk[0].DriverArea -> idx += 1; // no need to modulo
+    disk[0].DriverArea -> idx += 1; // no need modulo
     
 
     __sync_synchronize();
     WRITE_32(VIRTIO_MMIO_DISK_QUEUE_NOTIFY(VIRTIO_MMIO_DISK_IDX),0);
     
 
-    while(b -> status == 3){
-        if((b -> status ==  1) || (b -> status ==  2)){
+    while(b -> status == VIRTIO_BLK_S_UNDEF){
+        if((b -> status ==  VIRTIO_BLK_S_IOERR) || (b -> status ==  VIRTIO_BLK_S_UNSUPP)){
             printf("Request has failed : status = %i\n",b->status);
             panic("");
         }

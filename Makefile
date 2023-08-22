@@ -56,10 +56,10 @@ qemu : ${K}/kernel
 	${QEMU} ${QEMUOPTS}
 
 qemu-gdb : ${K}/kernel
-	${QEMU} -machine virt -cpu rv64 -smp $(CORES) -s -S -nographic -bios none -kernel ${K}/kernel
+	${QEMU} ${QEMUOPTS} -s -S
 
 gdb :
-	${GDB} --command=./${K}/gdb
+	${GDB} --command=./gdb
 
 %.o : %.c ${CONSTANT}
 	${CC} -${CFLAGS} -c $< -o $@
@@ -69,4 +69,4 @@ gdb :
 
 clear :
 	rm ${OBJS}
-	rm ${K}/kernel ${K}/kernel.asm ${K}/kernel.sym
+	rm ${K}/kernel ${K}/kernel.asm

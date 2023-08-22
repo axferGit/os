@@ -49,6 +49,7 @@ void memset(void* dst, char v, uint32 sz){
     return;
 }
 
+// Copy [sz] bytes from [src] into [dst]
 void memcpy(void* dst, void* src, uint32 sz){
     uint32 p;
     for(p = 0; p <  sz; p++){
