@@ -38,7 +38,7 @@ void procinit(){
         // trapframe
         if ((proc -> trapframe = (struct trapframe *) alloc()) == 0){
             panic("Proc trapframe alloc failed\n");
-        }
+        }        
         mappages(proc -> pt, (void*) TRAPFRAME, PAGESIZE, (void*) proc -> trapframe, PTE_R | PTE_W);
         
         // kernel
@@ -49,7 +49,6 @@ void procinit(){
         if ((k_stack = alloc()) == 0){
             panic("Fail to alloc k_stack\n");
         }
-        printf("kernel satck for proc %i : %p\n",i,k_stack);
         mappages(kernel_pagetable,(void*) TRAPFRAME - (2*(i+1) - 1) * PAGESIZE, PAGESIZE, k_stack, PTE_R | PTE_W);
         mappages(kernel_pagetable,(void*) TRAPFRAME - (2*(i+1)) * PAGESIZE, PAGESIZE, 0x0, 0x0); // Guard page
         
@@ -71,8 +70,6 @@ void procinit(){
 
         // rodata.str1.8
         mappages(proc->pt, (void*) PAGESIZE, PAGESIZE, (void*) &euser_data, PTE_U | PTE_R | PTE_W);
-
-        printf("User rodata: %p\n",(uint64) &euser_data);
 
         // context (called to launch the process)
         proc -> context.sp = proc -> trapframe -> k_sp; // kernel sp

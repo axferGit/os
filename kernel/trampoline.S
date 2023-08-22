@@ -61,7 +61,7 @@ uservecret:
     sfence.vma zero, zero
 
     # save a0 in sscratch
-    sd t0, 72(a0)
+    ld t0, 72(a0)
     csrw sscratch, t0
 
     ld ra, 0(a0)

@@ -151,24 +151,18 @@ void usertrap(){
         {
             case ENVIRONMENT_CALL_FROM_U_MODE:
                 //printf("%s\n",cause_exception[cause]);
-                //match nulber of syscall stored in a7
-                switch(cpu_list[id].proc -> trapframe -> a7){
-                    case(U_SYSCALL_TEST):
-                        //printf("%s\n",usys[U_SYSCALL_TEST]);
-                        proc -> trapframe -> pc += 4;
-                        //printf(">>>>>>>>>>>>>>>> ");
-                        //printf("Before sys_test\n");
-                        sys_call[U_SYSCALL_TEST]();
-                        
-                        //uartputc((char) (myproc() -> trapframe -> a0));
-                        //printf("%p",cpu_list[id].proc -> trapframe -> a0);
-                        //printf(" <<<<<<<<<<<<<<<<\n");
-                        break;
+
+                uint32 scn = cpu_list[id].proc -> trapframe -> a7;
+
+                if ((0 <= scn) && (scn < NSYSCALL)){
+                    proc -> trapframe -> pc += 4;
                     
-                    default:
-                        panic("Bad U_SYSCALL\n");
-                        break;
+                    sys_call[scn]();
+
+                } else {
+                    printf("Syscall not recognized: %i\n",scn);
                 }
+                
                 break;
             
             default:
@@ -187,7 +181,6 @@ void usertrapret(){
     w_sepc(myproc()->trapframe->pc); //restore pc
     s_sstatus(((uint64) USER) << SPP);
     w_stvec((uint64)(TRAMPOLINE + ((uint64) &uservec - (uint64) &trampoline)));
-
     uint64 fn = (TRAMPOLINE + ((uint64) &uservecret - (uint64) &trampoline));
     ((void (*) (uint64,uint64)) fn) (TRAPFRAME, (uint64) MAKE_SATP(myproc()->pt));
     return;

@@ -10,11 +10,12 @@ extern void kvminithart();
 extern void mappages(t_pagetable, void*, uint64, void*, uint64);
 extern void mappage(t_pagetable, void*, void*, uint64);
 extern void* walk(t_pagetable, void* , int);
+extern uint64 walkaddr(t_pagetable,void*);
+
 extern void printmemory();
 extern void print_pt(t_pagetable);
 extern void printvm();
 extern void print_page(t_pagetable, uint64);
-extern uint64 kva(t_pagetable,void*);
 
 
 #endif

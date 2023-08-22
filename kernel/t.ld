@@ -24,6 +24,8 @@ SECTIONS
   . = ALIGN(0x1000);
   PROVIDE(edata = .);
 
+  # USER PROC
+  
   .user_text ALIGN(0x1000) : {user/userproc.o(.text) user/userlib.o(.text)}
   . = ALIGN(0x1000);
   PROVIDE(euser_text = .);
