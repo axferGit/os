@@ -3,6 +3,7 @@
 
 #include "types.h"
 
+void rqstinit();
 void diskinit();
 void diskrequest(uint32,struct buf *);
 

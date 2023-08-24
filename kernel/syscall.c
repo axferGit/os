@@ -133,10 +133,10 @@ void sys_open(){
     };
     int inum = find(name);
     if (inum !=-1){
-        struct file* f = getfile();
+        struct file* f = getf();
         f->off = 0;
         f->in = openi(inum); 
-        uint32 fd = getofile();
+        uint32 fd = getof();
         p->ofile[fd] = f; //TODO : clean way to find available slot in open files
         p->trapframe->a0 = fd;
     }
@@ -149,7 +149,7 @@ void sys_open(){
 
 void sys_read(){
     uint32 fd = argn(0);
-    uint8* va_buf = argn(1);
+    uint8* va_buf = (uint8*) argn(1);
     uint32 sz = argn(2);
     uint8* buf[128];
 
@@ -159,7 +159,7 @@ void sys_read(){
 
     if (pa_dst == 0){
         printf("kVirtual address in user land not mappes: %p\n",va_buf);
-        return -1;
+        return;
     } 
 
 

@@ -25,6 +25,8 @@ void main(){
     printf("[OK] kvminihart\n");
     procinit();
     printf("[OK] procinit\n");
+    fsinit();
+    printf("[OK] fsinit\n");
     diskinit();
     printf("[OK] diskinit\n");
 
