@@ -42,9 +42,10 @@
 // VIRTIO DISK
 #define NDISK 1
 #define QUEUE_SIZE (8)
-#define VIRTIO_BLK_T_IN 0 //read
-#define VIRTIO_BLK_T_OUT 1 //write
-#define SECTOR_SIZE (512) // constant
+#define VIRTIO_BLK_T_IN 0 // request to read
+#define VIRTIO_BLK_T_OUT 1 // request to write
+#define VIRTIO_BLK_T_UNUNSED 2 // BLOCK NOT USED : do no comply to manual !
+#define SECTOR_SIZE (512) // unchanging
 #define QALIGN (PAGESIZE) // need to be a power of 2
 #define BLOCK2SEC(blk) ((blk) * ((BLOCK_SIZE)/(SECTOR_SIZE)))
 #define IBLOCK(inum) (SINODE + ((inum) / (IPB)))
@@ -211,6 +212,7 @@
 
 // BUFFER CACHE
 #define NBUF 16
+#define NIN 16 // numnber of inodes in inode_list
 #define NFILE 16
 #define NOFILE 16
 #define NRQST 16

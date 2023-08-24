@@ -70,16 +70,21 @@ struct context {
 
 };
 
-enum state {RUNNABLE, RUNNING};
+enum state {RUNNABLE, RUNNING, SLEEPING};
 
 struct proc {
+    struct spinlock lk; //protects
+    /////////
     uint64 pid;
     enum state state;
+    void* chan;
+    /////////
     t_pagetable pt;
     char * stack;
     struct trapframe * trapframe;
     struct context context;
     struct file* ofile [NOFILE];
+    
 };
 
 struct cpu {
@@ -115,11 +120,11 @@ struct virtq_used {
 };
 
 struct disk {
-    char data[2*QALIGN]; // 
+    char data[2*QALIGN]; //need to be [QALIGN] aligned
     struct virtq_desc * DescriptorArea ;
     struct virtq_avail * DriverArea;
     struct virtq_used * DeviceArea;
-    uint8 free[QUEUE_SIZE];
+    uint8 free[QUEUE_SIZE]; //bitmap toknow which desc is free
 };
 
 struct virtio_blk_req {
@@ -155,22 +160,37 @@ struct dirent {
 };
 
 struct buf {
-    uint8 written;
+    uint32 refcnt; // number of pending readings
     uint64 blk;
+    struct sleeplock slk; // protects
+    ///////// 
+    uint32 valid; // has been read from disk ?
     uint8 data[BLOCK_SIZE];
-    uint8 status;
+    uint8 status; //used by disk.c : device writes the status of the request here
+    /////////
 };
 
 struct inode {
     uint16 inum;
+    uint32 ref;
     struct dinode di;
 };
 
 struct file {
+    uint32 ref;
     uint32 off;
     struct inode * in;
 };
 
+struct spinlock {
+    uint32 lock; // 1 is locked, 0 is unlocked (free)
+};
 
+struct sleeplock{
+    struct spinlock lk; // protects
+    /////////
+    uint32 lock; // 1 is locked, 0 is unlocked (free)
+    /////////
+};
 
 #endif

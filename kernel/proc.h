@@ -11,5 +11,7 @@ extern void procinit();
 extern void proclaunch();
 extern struct proc * myproc();
 extern void sched();
+extern void sleep(void*,struct spinlock*);
+extern void wakeup(void*);
 
 #endif

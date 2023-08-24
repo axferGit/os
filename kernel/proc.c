@@ -8,6 +8,7 @@
 #include "ssys.h"
 #include "trampoline.h"
 #include "swtch.h"
+#include "spinlock.h"
 
 extern char* edata;
 extern char* trampoline;
@@ -94,5 +95,39 @@ struct cpu * mycpu(){
 void sched(){
     swtch(&(myproc()->context), &(mycpu() ->context));
     return;
-
 }
+
+// Sleep proc on channel [chan] whith spinlock acquired [lk]
+// [lk] is locked on return
+void sleep(void* chan, struct spinlock* lk){
+    struct proc* p = myproc();
+    if(lk != &p->lk){
+        acquire(&p->lk);
+        release(lk);
+    }
+    p->chan = chan;
+    p->state = SLEEPING;
+
+    sched();
+
+    if(lk != &p->lk){
+        release(&p->lk);
+        acquire(lk);   
+    }
+    
+    return;   
+}
+
+// Wakeup all processes sleeping on chan [chan]
+void wakeup(void* chan){
+    struct proc* p;
+    for(p = proc_list; p <= &proc_list[NPROC]; p++){
+        acquire(&p->lk);
+        if((p->state == SLEEPING) && (p->chan == chan)){
+            p->state = RUNNABLE;
+        }
+        release(&p->lk);
+    }
+    return;
+}
+

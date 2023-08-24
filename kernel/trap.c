@@ -10,6 +10,7 @@
 #include "uart.h"
 #include "swtch.h"
 #include "syscall.h"
+#include "spinlock.h"
 
 extern void uservecret(uint64,uint64);
 extern void uservec();
@@ -128,12 +129,16 @@ void usertrap(){
             case (SSI):
                 printf("SSI\n");
                 c_sip(1 << SSI); // clear SIP
+
+                acquire(&proc->lk);
                 
                 proc ->state = RUNNABLE;
 
                 // switch to scheduler (on main thread)
                 sched();
                 // resume from scheduler (on main thread)
+
+                release(&proc->lk);
 
                 break;
             
