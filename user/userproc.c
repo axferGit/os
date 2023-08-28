@@ -7,8 +7,10 @@ void f(){
     uint32 fd = open("README.md",0);
     uint32 nb = read(fd,buf,64);
     uprint_str(buf);
-
-    while(1){;};
-    
+    nb = read(fd,buf,64);
+    uprint_str(buf);
+    while(1){
+        ;
+    }
     return;
 }

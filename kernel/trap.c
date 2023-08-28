@@ -130,15 +130,14 @@ void usertrap(){
                 printf("SSI\n");
                 c_sip(1 << SSI); // clear SIP
 
+                // proc->lk is locked (comes from sheduler())
                 acquire(&proc->lk);
-                
                 proc ->state = RUNNABLE;
-
                 // switch to scheduler (on main thread)
                 sched();
-                // resume from scheduler (on main thread)
-
                 release(&proc->lk);
+
+                // resume from scheduler (on main thread)
 
                 break;
             

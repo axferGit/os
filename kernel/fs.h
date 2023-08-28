@@ -4,17 +4,31 @@
 #include "types.h"
 #include "memlayout.h"
 
-extern struct buf bcache [NBUF];
-extern struct inode inode_list [NINODE * IPB];
+extern struct bcache bcache_list;
+extern struct icache icache_list;
+extern struct fcache fcache_list;
 
-extern struct buf * getb();
-extern void createb(struct buf *,uint8,uint32);
-extern struct buf * readb(uint64);
-extern uint32 readi(struct inode*,uint32,uint32,uint8*);
-extern struct inode* geti();
-extern struct inode * openi(uint16);
+extern void binit();
+extern struct buf* bacquire(uint64);
+extern void brelease();
+extern struct buf* bread(uint64);
+extern struct buf* fbread(struct inode*,uint64);
+
+extern void iinit();
+extern struct inode* iacquire(uint16);
+extern void irelease(struct inode*);
+extern struct inode* iopen(uint16);
+extern uint32 iread(struct inode*,uint32,uint32,uint8*);
 extern uint16 find(uint8*);
-extern struct file * getfile();
-extern uint32 getofile();
+
+extern void finit();
+extern struct file* facquire();
+extern void frelease(struct file*);
+
+extern void ofinit(struct proc*);
+extern uint32 ofalloc();
+extern void ofdealloc();
+
+extern void fsinit();
 
 #endif

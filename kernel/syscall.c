@@ -4,18 +4,21 @@
 #include "alloc.h"
 #include "printf.h"
 #include "fs.h"
-
+#include "disk.h"
+#include "spinlock.h"
 
 void sys_print();
 void sys_open();
 void sys_print_hex();
 void sys_read();
+void sys_test();
 
 void (*(sys_call[NSYSCALL]))() = {
     [U_SYSCALL_PRINT_STR] sys_print,
     [U_SYSCALL_OPEN] sys_open,
     [U_SYSCALL_PRINT_HEX] sys_print_hex,
-    [U_SYSCALL_READ] sys_read
+    [U_SYSCALL_READ] sys_read,
+    [U_SYSCALL_TEST] sys_test
 };
 
 
@@ -123,20 +126,31 @@ void sys_print_hex(){
     return;
 }
 
+void sys_test(){
+    sys_open();
+
+    panic("stop test\n");
+    return;
+}
+
+
 void sys_open(){
     struct proc * p = myproc();
     uint8 name[NCHAR];
     memset(name,0,sizeof(name));
+
     if (copyinstr(name,(void*) argn(0),sizeof(name)-1) == -1){
         printf("cpstr failed\n");
         panic("");
     };
+
     int inum = find(name);
+
     if (inum !=-1){
-        struct file* f = getf();
+        struct file* f = facquire();
         f->off = 0;
-        f->in = openi(inum); 
-        uint32 fd = getof();
+        f->in = iopen(inum); // locked!
+        uint32 fd = ofalloc();
         p->ofile[fd] = f; //TODO : clean way to find available slot in open files
         p->trapframe->a0 = fd;
     }
@@ -144,6 +158,7 @@ void sys_open(){
         printf("error :can not find file");
         p->trapframe->a0 = -1;
     }
+    printf("OK sys_open\n");
     return;
 }
 
@@ -163,7 +178,7 @@ void sys_read(){
     } 
 
 
-    uint32 nb = readi(p->ofile[fd]->in,p->ofile[fd]->off,sz,pa_dst);
+    uint32 nb = iread(p->ofile[fd]->in,p->ofile[fd]->off,sz,pa_dst);
     p->ofile[fd]->off += nb;
     p->trapframe->a0 = nb;
 

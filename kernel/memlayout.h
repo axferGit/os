@@ -203,11 +203,15 @@
 #define S_SYSCALL_HARTID (1)
 
 // USYSCALL
-#define NSYSCALL 4 // number of sys calls
+#define NSYSCALL 5 // number of sys calls
 #define U_SYSCALL_PRINT_STR 0
 #define U_SYSCALL_OPEN 1
 #define U_SYSCALL_PRINT_HEX 2
 #define U_SYSCALL_READ 3
+#define U_SYSCALL_TEST 4
+
+// SPINLOCK
+#define NTICKSMAX 100000
 
 
 // BUFFER CACHE
