@@ -3,6 +3,8 @@
 #include "printf.h"
 #include "alloc.h"
 #include "vm.h"
+#include "spinlock.h"
+#include "proc.h"
 
 #define WRITE_32(addr,v) (*((volatile uint32*) (addr)) = v)
 #define READ_32(addr) (*((volatile uint32*) (addr)))
@@ -10,7 +12,6 @@
 
 
 __attribute__ ((aligned (PAGESIZE))) struct disk disk[NDISK]; // virtques need to be Qalign aligned
-struct virtio_blk_req blk_rqst_list[NRQST];
 
 
 // Init free list
@@ -64,32 +65,10 @@ uint32 alloc3desc(uint16* idx){
 }
 
 
-void rqstinit(){
-    for (struct virtio_blk_req * blk_rqst = blk_rqst_list; blk_rqst<= &blk_rqst_list[NRQST]; blk_rqst++){
-        blk_rqst->type = VIRTIO_BLK_T_UNUNSED;
-    }
-    return;
-}
-
-// Retun a pointer to a free request in blk_rqst_list
-// panic on failure
-struct virtio_blk_req* getrqst(){
-    for (struct virtio_blk_req * blk_rqst = blk_rqst_list; blk_rqst<= &blk_rqst_list[NRQST]; blk_rqst++){
-        if (blk_rqst->type == VIRTIO_BLK_T_UNUNSED){
-            blk_rqst->type = VIRTIO_BLK_T_IN; // unmarked as used (set abritrarily to read)
-            return blk_rqst;
-        };
-    }
-    panic("No blk_rqst available !\n");
-}
-
-void freerqst(struct virtio_blk_req* blk_rqst){
-    blk_rqst->type = VIRTIO_BLK_T_UNUNSED;
-    return;
-}
-
 // Create request
 void makerqst(struct virtio_blk_req* blk_rqst, uint32 t_rqt, uint64 blk){
+    // TODO: make sure blk is in range
+    // need informations of sb
     blk_rqst -> type = t_rqt;
     blk_rqst -> reserved = 0;
     blk_rqst -> sector = BLOCK2SEC(blk);
@@ -97,14 +76,19 @@ void makerqst(struct virtio_blk_req* blk_rqst, uint32 t_rqt, uint64 blk){
 }
 
 // Perfom [t_rqt] request on buffer [b]
+// sleeplocl on buffer [b] is locked
 void diskrequest(uint32 t_rqt,struct buf * b){
+
+    acquire(&disk[0].lk);
+
     uint16 idx[3];
-    struct virtio_blk_req* blk_rqst = getrqst();
 
     while(alloc3desc(idx) == -1){
         ;
     }
     
+    struct virtio_blk_req* blk_rqst = &disk[0].blk_rqst_list[idx[0]];
+
     makerqst(blk_rqst,t_rqt,b->blk);
 
     disk[0].DescriptorArea[idx[0]].addr =(uint64) blk_rqst;
@@ -132,20 +116,25 @@ void diskrequest(uint32 t_rqt,struct buf * b){
     
 
     while(b -> status == VIRTIO_BLK_S_UNDEF){
-        if((b -> status ==  VIRTIO_BLK_S_IOERR) || (b -> status ==  VIRTIO_BLK_S_UNSUPP)){
-            printf("Request has failed : status = %i\n",b->status);
-            panic("");
-        }
-        printf("Status after request: %i\n",b->status);
+        //sleep(&disk[0].DescriptorArea[idx[0]],&disk[0].lk);
+        printf("device\n");
     };
+
+    if((b -> status ==  VIRTIO_BLK_S_IOERR) || (b -> status ==  VIRTIO_BLK_S_UNSUPP)){
+        printf("Request has failed : status = %i\n",b->status);
+        panic("");
+    }
+
     free3desc(idx);
-    freerqst(blk_rqst);
+    release(&disk[0].lk);
 
     return;
 }
 
 // Init disk device
 void diskinit(){
+
+    spinlockinit(&disk[0].lk,"disk lock");
 
     freeinit();
 
@@ -233,4 +222,16 @@ void diskinit(){
     WRITE_32(VIRTIO_MMIO_DISK_DEVICE_STATUS(VIRTIO_MMIO_DISK_IDX), status);
 
     return;
+}
+
+// disk interrupt handler
+void diskintr(){
+    acquire(&disk[0].lk);
+
+    while((disk[0].used_idx % QUEUE_SIZE) < (disk[0].DeviceArea->idx % QUEUE_SIZE)){
+        wakeup(&disk[0].DescriptorArea[disk[0].used_idx % QUEUE_SIZE]);
+        disk[0].used_idx ++;
+    }
+
+    release(&disk[0].lk);
 }

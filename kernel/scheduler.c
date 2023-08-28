@@ -13,7 +13,7 @@ void scheduler(){
     uint64 id = hartid();
     struct proc * p;
     while(1){
-        for(p = &proc_list[0] ; p <= &proc_list[NPROC] ; p++){
+        for(p = &proc_list[0] ; p < &proc_list[NPROC] ; p++){
 
             acquire(&p->lk);
 
@@ -24,9 +24,9 @@ void scheduler(){
                 cpu_list[id].proc = p;
                 p->state = RUNNING;
 
-                // switch to proc
+                // switch to proc, p->lk is locked
                 swtch(&(cpu_list[id].context), &(p->context));
-                // return from proc
+                // return from proc, p->lk is locked
 
             }
 

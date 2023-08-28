@@ -9,6 +9,7 @@
 #include "trampoline.h"
 #include "swtch.h"
 #include "spinlock.h"
+#include "fs.h"
 
 extern char* edata;
 extern char* trampoline;
@@ -20,6 +21,12 @@ extern uint64 euser_bss;
 struct proc proc_list[NPROC];
 struct cpu cpu_list[NHART];
 
+void procfirstlaunch(){
+    struct proc * p = myproc();
+    release(&p->lk);
+    usertrapret();
+}
+
 void procinit(){
     int i;
     for(i = 0 ; i < NPROC ; ++i){
@@ -27,6 +34,7 @@ void procinit(){
         proc = &proc_list[i];
 
         proc -> pid = i;
+        spinlockinit(&proc->lk,"spinlock process");
         
         // pagetable
         if ((proc -> pt = alloc()) == 0){
@@ -74,8 +82,11 @@ void procinit(){
 
         // context (called to launch the process)
         proc -> context.sp = proc -> trapframe -> k_sp; // kernel sp
-        proc -> context.ra = (uint64) &usertrapret; // ra points to usertrapret
+        proc -> context.ra = (uint64) &procfirstlaunch; // ra points to usertrapret
         proc -> trapframe -> pc = 0; // pc points to the first instruction
+        
+        ofinit(proc);
+
         proc -> state = RUNNABLE; 
 
     }
@@ -87,24 +98,29 @@ struct proc * myproc() {
     return cpu_list[hartid()].proc;
 }
 
+// Return the cpu of current hart
 struct cpu * mycpu(){
     return &cpu_list[hartid()];
 }
 
 // Switch from user process to scheduler process
+// p->lk must be locked before
+// p->lk is locked after
 void sched(){
     swtch(&(myproc()->context), &(mycpu() ->context));
     return;
 }
 
-// Sleep proc on channel [chan] whith spinlock acquired [lk]
+// Sleep proc on channel [chan] with spinlock acquired [lk]
 // [lk] is locked on return
 void sleep(void* chan, struct spinlock* lk){
+    printf("Went on sleep\n");
     struct proc* p = myproc();
     if(lk != &p->lk){
         acquire(&p->lk);
         release(lk);
     }
+    
     p->chan = chan;
     p->state = SLEEPING;
 
@@ -114,14 +130,15 @@ void sleep(void* chan, struct spinlock* lk){
         release(&p->lk);
         acquire(lk);   
     }
-    
+
     return;   
 }
 
 // Wakeup all processes sleeping on chan [chan]
+// must be called without any proc->lk locked !
 void wakeup(void* chan){
     struct proc* p;
-    for(p = proc_list; p <= &proc_list[NPROC]; p++){
+    for(p = &proc_list[0]; p < &proc_list[NPROC]; p++){
         acquire(&p->lk);
         if((p->state == SLEEPING) && (p->chan == chan)){
             p->state = RUNNABLE;

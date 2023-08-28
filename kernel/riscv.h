@@ -157,3 +157,9 @@ static inline void s_sstatus(uint64 x){
     asm volatile("csrs sstatus, %0" : : "r"(x));
     return;
 }
+
+static inline uint64 r_ra(){
+    uint64 x;
+    asm volatile("mv %0, ra" : "+r" (x):);
+    return x;
+}

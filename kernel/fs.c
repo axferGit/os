@@ -5,177 +5,293 @@
 #include "printf.h"
 #include "proc.h"
 #include "vm.h"
+#include "spinlock.h"
+#include "sleeplock.h"
+#include "string.h"
 
 #define ADDR2FBLOCK(addr) ((addr) / (BLOCK_SIZE))
 #define ADDR2OFF(addr) ((addr) % (BLOCK_SIZE))
 #define min(a,b) (((a) < (b)) ? (a) : (b))
 #define max(a,b) (((a) > (b)) ? (a) : (b))
 
+struct bcache bcache_list;
+struct icache icache_list;
+struct fcache fcache_list;
 
-struct buf bcache [NBUF];
-struct inode inode_list [NINODE * IPB];
-struct file file_list [NFILE];
-
-// Return a free buf from cache buffers list
-struct buf * getb(){
-    return &bcache[0];
-}
-
-// Cretae a cache buffer with request type [t_rqt] and block number [blk]
-// return nothing
-void createb(struct buf * b, uint8 t_rqt, uint32 blk){
-    b->blk = blk;
-    b->status = t_rqt;
+// Init bcache, by setting all buffers as free
+void binit(){
+    spinlockinit(&bcache_list.lk,"bcahce list");
+    struct buf* b;
+    for (b = &bcache_list.array[0]; b < &bcache_list.array[NBUF]; b++){
+        sleeplockinit(&b->slk,"buf sleeplock");
+        b->refcnt = 0;
+        b->valid = 0;
+    }
     return;
 }
 
-// Read block number [blk] into a buffer
-// return the buffer
-struct buf * readb(uint64 blk){
-    struct buf * b = getb();
-    createb(b,VIRTIO_BLK_S_UNDEF,blk);
-    diskrequest(VIRTIO_BLK_T_IN,b);
+// Acquire a buffer for block [blk]
+// the buffer is locked (sleeplock of the buffer)
+// panic on failure
+struct buf * bacquire(uint64 blk){
+    struct buf * b;
+    acquire(&bcache_list.lk);
+
+    // Case 1 : buf blk exists
+    for (b = bcache_list.array; b <= &bcache_list.array[NBUF]; b++){
+        if (b->blk == blk){
+            b->refcnt++;
+            release(&bcache_list.lk);
+            acquiresleep(&b->slk);
+            return b;
+        }
+    }
+    // Case 2 : buf blk does not exist, need to allocate a new one
+    for (b = bcache_list.array; b <= &bcache_list.array[NBUF]; b++){
+        if (b->refcnt == 0){
+            b->blk = blk;
+            b->refcnt = 1;
+            // No need to lock sleeplock as no one is supposed to used the data field
+            b->valid = 0;
+            release(&bcache_list.lk);
+            acquiresleep(&b->slk);
+            return b;
+        }
+    }
+    panic("No buffer cache available\n");
+}
+
+// Release buffer [b]
+// must be called with b->slk locked
+void brelease(struct buf* b){
+    releasesleep(&b->slk);
+    acquire(&bcache_list.lk);
+    if (b->refcnt == 0){
+        panic("Buffer ref is 0! Impossible to free!\n");
+    }
+    b->refcnt--;
+    release(&bcache_list.lk);
+    return;
+}
+
+// Return a locked buffer with the content of block [blk]
+// Lock must be release with call to **brelease()**
+struct buf * bread(uint64 blk){
+    struct buf * b = bacquire(blk); // we get the sleeplock
+    if (b->valid == 1){
+        return b;
+    } else {
+        diskrequest(VIRTIO_BLK_T_IN,b);
+        b->valid = 1;
+    }    
     return b;
 }
 
-// Read the data block with file block number [fbn] in inode [i]
-struct buf * readfb(struct inode* i,uint64 fbn){
+// Return a locked buf with the content of file block number [fbn] of inode [i]
+struct buf * fbread(struct inode* i,uint64 fbn){
     uint64 blk;
     if (NADDR <= fbn){
-        struct buf * b = readb(i->di.data[NADDR]);
+        struct buf * b = bread(i->di.data[NADDR]);
         fbn -= NADDR;
         blk = ((inodeent*) b->data)[fbn];
+        brelease(b);
     } else {
         blk = i->di.data[fbn];
     }
-    return readb(blk);
+    return bread(blk);
 }
 
-// Read from inode [i] [sz] bytes maximum starting from [off] into data buffer [buffer]
-// return the number of bytes read
-uint32 readi(struct inode* i,uint32 off, uint32 sz, uint8* buffer){
-    struct buf * b;
+// Init inode_list
+void iinit(){
+    spinlockinit(&icache_list.lk,"icache list");
+    struct inode* in;
+    for (in = &icache_list.array[0]; in < &icache_list.array[NIN]; in++){
+        sleeplockinit(&in->slk,"inode sleeplock");
+        in->ref = 0;
+        in->valid = 0;
+    }
+    return;
+}
+
+// Acquire an inode for inum [inum]
+// the inode is locked
+struct inode* iacquire(uint16 inum){
+    acquire(&icache_list.lk);
+
+    struct inode* in;
+
+    for (in = icache_list.array; in <= &icache_list.array[NIN]; in++){
+        if(in->inum == inum){
+            in->ref ++;
+            release(&icache_list.lk);
+            acquiresleep(&in->slk);
+            return in;
+        }
+    }
+    for (in = icache_list.array; in <= &icache_list.array[NIN]; in++){
+        if(in->ref == 0){
+            in->inum = inum;
+            in->ref++;
+            in->valid = 0;
+            release(&icache_list.lk);
+            acquiresleep(&in->slk);
+            return in;
+        }
+    }
+    panic("No inode vailable\n");
+}
+
+// Release inode [in]
+// must be called with in->slk locked
+void irelease(struct inode* in){
+    releasesleep(&in->slk);
+
+    acquire(&icache_list.lk);
+    if(in->ref == 0){
+        panic("Cannot free inode, no ref\n");
+    }
+    in->ref--;
+    release(&icache_list.lk);
+    return;
+}
+
+// Fillup inode number [inum]
+// the inode is locked!
+struct inode * iopen(uint16 inum){
+    struct inode * in = iacquire(inum); // sleeplock locked!
+    if(in->valid == 1){
+        return in;
+    }
+    else {
+        uint64 blk = IBLOCK(inum);
+        uint32 off = IBLOCKOFF(inum);
+
+        struct buf * b = bread(blk); // locked
+        memcpy(&in->di,&((struct dinode *) b->data)[off],sizeof(struct dinode));
+        brelease(b);
+        return in;
+        
+    }
+}
+
+// Read from inode [in], [sz] bytes maximum starting from [off] into data buffer [buffer]
+// return the number of read bytes
+// Must be called with sleeplock in->slk locked
+// Lock must be release with call to **irelease()**
+uint32 iread(struct inode* in,uint32 off, uint32 sz, uint8* buffer){
+    
     uint32 tot = 0;
 
     // Resize sz to be in the file
-    if (i->di.size < off){
+    if (in->di.size < off){
         sz = 0;
     } else {
-        sz = min(sz,(i->di.size - off));
+        sz = min(sz,(in->di.size - off));
     }
 
     while(sz > 0){
         uint32 fbn = ADDR2FBLOCK(off);
         uint32 fbn_off = ADDR2OFF(off);
         uint32 nb = min(sz,(BLOCK_SIZE) - fbn_off);
+        struct buf * b = fbread(in,fbn);
 
-
-        b = readfb(i,fbn);
-        
         memcpy(buffer+tot,b->data + fbn_off,nb);
+        brelease(b);
 
         sz -= nb;
         off += nb;
         tot += nb;
     };
-
     return tot;
 }
-
-// Retrurn a pointer to a free structure inside inode list
-struct inode* geti(){
-    return &(inode_list[0]);
-}
-
-// Open inode [inum] to an inode strcuture
-// return a pointer to this strcuture
-struct inode * openi(uint16 inum){
-    struct inode * in = geti();
-    uint64 blk = IBLOCK(inum);
-    uint32 off = IBLOCKOFF(inum);
-    struct buf * b = readb(blk);
-    memcpy(&in->di,&((struct dinode *) b->data)[off],sizeof(((struct dinode *) b->data)[off]));
-    return in;
-}
-
-uint32 strcmp(uint8* s1, uint8* s2){
-    if (s1[0] == s2[0]){
-        if(s1[0] == 0){
-            return 0;
-        } else {
-            return strcmp(s1+1,s2+1);
-        }
-    } else {
-        return -1;
-    }
-}
-
 
 // Return the inode number of file [name]
 // return -1 on failure
 uint16 find(uint8* name){
-    // TOSO : Make sure it is a directory
-    struct inode * inroot = openi(0);
+    // TODO : Make sure it is a directory
+    struct inode * inroot = iopen(0); // locked!
     uint32 sz = inroot->di.size;
-    uint32 nb=0;
+    uint32 off=0;
     struct dirent dent;
 
-    while(readi(inroot,nb,sizeof(struct dirent),(uint8*) &dent) == sizeof(struct dirent)){
-        nb+=sizeof(struct dirent);
+    while(iread(inroot,off,sizeof(struct dirent),(uint8*) &dent) == sizeof(struct dirent)){
+        off += sizeof(struct dirent);
         if(!strcmp(name,dent.name)){
+            irelease(inroot);
             return dent.inum;
         }
     }
+    irelease(inroot);
     return -1;   
 }
 
-// Return a pointer to an available file in the file list
-struct file * getfile(){
-    return &file_list[0];
-}
-
-// return an free file destriptor
-uint32 getofile(){
-    return 0;
-}
-
-
-/*
-int fd = open("README.md",O_RO);
-
->>> SYS call
-sys_open(){
-    char* name [NCHAR];
-    cpstruser(name,argn(0)) // copy string from user land to kernel land
-    int inum = find(name)
-    if (inum !=-1){
-        sqtruct proc * p = myproc();
-        struct file* f = getfile();
-        f->off = 0;
-        f->in  = openi(inum); 
-        int f = getfile();
-        uint32 fd = getofile();
-        p->ofile[fd] = f; //TODO : clean way to find available slot in open files
-        p->trapframe->a0 = fd;
-    }
-    else {
-        printf("error :can not find file");
+// Init file list
+void finit(){
+    spinlockinit(&fcache_list.lk,"fcache list");
+    struct file* f;
+    for(f = &fcache_list.array[0]; f < &fcache_list.array[NFILE]; f++){
+        sleeplockinit(&f->slk,"file sleeplock");
+        f->ref = 0;
     }
     return;
 }
 
-sys_read(){
-    uint32 fd = (uint32) argn(0);
-    uint8* buf = (uint8*) argn(1);
-    uint32 n = (uint32) argn(2);
-
-    struct proc* p = myproc(){
-        struct file f * = p->ofile[fd];
-        if(f != 0){
-            readi()
+// Acquire an available file in the file list
+// panic on failure
+struct file * facquire(){
+    acquire(&fcache_list.lk);
+    for(struct file* f = fcache_list.array; f <= &fcache_list.array[NFILE]; f++){
+        if(f->ref == 0){
+            f->ref++;
+            release(&fcache_list.lk);
+            return f;
         }
     }
+    panic("No file available\n");
 }
 
-*/
+// Free file [f]
+void frelease(struct file* f){
+    acquire(&fcache_list.lk);
+    if (f->ref == 0){
+        panic("Cannot free file, ref is 0\n");
+    }
+    f->ref --;
+    release(&fcache_list.lk);
+    return;
+}
 
+// Init array of open files of proc [p]
+void ofinit(struct proc* p){
+    for(uint32 i = 0; i < NOFILE; i++){
+        p->ofile[i] = 0;
+    }
+    return;
+}
+
+// Acquire file descriptor [fd]
+// panic on failure
+uint32 ofalloc(){
+    struct proc* p = myproc();
+    struct file* f;
+    for(uint32 i = 0; i < NOFILE; i++){
+        if(p->ofile[i] == 0){
+            return i;
+        }
+    }
+    panic("No openfile available\n");
+}
+
+// Release file descriptor [fd]
+void ofdalloc(uint32 fd){
+    struct proc* p = myproc();
+    p->ofile[fd] = 0;
+    return;
+}
+
+// Init fs
+void fsinit(){
+    binit();
+    iinit();
+    finit();
+}

@@ -70,6 +70,34 @@ struct context {
 
 };
 
+struct spinlock {
+    uint32 lock; // 1 is locked, 0 is unlocked (free)
+    // For debug
+    uint8* name;
+    uint64 pc;
+    uint32 cpui;
+};
+
+struct sleeplock{
+    struct spinlock lk; // protects
+    /////////
+    uint32 lock; // 1 is locked, 0 is unlocked (free)
+    /////////
+    // For debug
+    
+};
+
+struct file {
+    //>>>>>>>
+    uint32 ref;
+    //<<<<<<<
+    struct sleeplock slk;
+    /////////
+    uint32 off;
+    struct inode * in;
+    /////////
+};
+
 enum state {RUNNABLE, RUNNING, SLEEPING};
 
 struct proc {
@@ -79,6 +107,7 @@ struct proc {
     enum state state;
     void* chan;
     /////////
+    // Private to process, below
     t_pagetable pt;
     char * stack;
     struct trapframe * trapframe;
@@ -119,20 +148,25 @@ struct virtq_used {
     uint16 avail_event;
 };
 
-struct disk {
-    char data[2*QALIGN]; //need to be [QALIGN] aligned
-    struct virtq_desc * DescriptorArea ;
-    struct virtq_avail * DriverArea;
-    struct virtq_used * DeviceArea;
-    uint8 free[QUEUE_SIZE]; //bitmap toknow which desc is free
-};
-
 struct virtio_blk_req {
     uint32 type;
     uint32 reserved;
     uint64 sector;
     // uint8 data[1024];
     // uint8 status;
+};
+
+struct disk {
+    char data[2*QALIGN]; //need to be [QALIGN] aligned
+    struct virtq_desc * DescriptorArea; // start of the array
+    struct virtq_avail * DriverArea; // start of the array
+    struct virtq_used * DeviceArea; // start of the array
+    struct spinlock lk; // protects
+    /////////
+    uint8 free[QUEUE_SIZE]; //bitmap to know which desc and blk_rqst is free
+    struct virtio_blk_req blk_rqst_list[NRQST];
+    uint16 used_idx; // keep the last used idx, to know which have been updated by the device
+    /////////
 };
 
 struct superblock {
@@ -160,8 +194,10 @@ struct dirent {
 };
 
 struct buf {
+    //>>>>>>> protected by struct bcache . lk
     uint32 refcnt; // number of pending readings
     uint64 blk;
+    //<<<<<<<
     struct sleeplock slk; // protects
     ///////// 
     uint32 valid; // has been read from disk ?
@@ -170,27 +206,33 @@ struct buf {
     /////////
 };
 
+struct bcache {
+    struct spinlock lk; // protects headers of struct buf
+    struct buf array[NBUF];
+};
+
 struct inode {
+    //>>>>>>> protected by struct icache . lk
     uint16 inum;
     uint32 ref;
+    //<<<<<<<
+    struct sleeplock slk; // protects
+    ///////// 
+    uint32 valid;
     struct dinode di;
-};
-
-struct file {
-    uint32 ref;
-    uint32 off;
-    struct inode * in;
-};
-
-struct spinlock {
-    uint32 lock; // 1 is locked, 0 is unlocked (free)
-};
-
-struct sleeplock{
-    struct spinlock lk; // protects
-    /////////
-    uint32 lock; // 1 is locked, 0 is unlocked (free)
     /////////
 };
+
+struct icache {
+    struct spinlock lk; // protects headers of struct buf
+    struct inode array[NIN];
+};
+
+struct fcache {
+    struct spinlock lk;
+    struct file array [NFILE];
+};
+
+
 
 #endif

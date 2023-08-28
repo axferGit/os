@@ -18,7 +18,10 @@ OBJS = ${K}/entry.o \
 	${K}/scheduler.o \
 	${K}/disk.o \
 	${K}/fs.o \
+	${K}/spinlock.o \
+	${K}/sleeplock.o \
 	${K}/syscall.o \
+	${K}/string.o\
 	${U}/userproc.o \
 	${U}/userlib.o
 	

@@ -6,6 +6,12 @@
 .global open
 .global uprint_hex
 .global read
+.global usys_test
+
+usys_test:
+    li a7, U_SYSCALL_TEST
+    ecall
+    ret
 
 uprint_str:
     li a7, U_SYSCALL_PRINT_STR
